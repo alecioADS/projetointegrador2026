@@ -12,15 +12,22 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await expect(page.getByRole("status")).toHaveCount(0);
   await page.getByRole("button", { name: "Materiais", exact: true }).click();
   await page.getByRole("button", { name: "+ Novo cadastro" }).click();
-  await page.getByLabel("Nome", { exact: true }).fill("PLA azul");
+  await page.getByLabel("Nome", { exact: true }).fill("Marca teste");
   await page.getByLabel("Cor", { exact: true }).fill("Azul");
   await page.getByLabel("Custo por kg").fill("100");
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "+ Novo cadastro" }).click();
+  await page.getByLabel("Nome", { exact: true }).fill("Marca teste");
+  await page.getByLabel("Tipo (PLA, PETG…)").fill("PETG");
+  await page.getByLabel("Cor", { exact: true }).fill("Vermelho");
+  await page.getByLabel("Custo por kg").fill("120");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Entrada de estoque" }).click();
   await page
     .getByLabel("Material", { exact: true })
-    .selectOption({ label: "PLA azul" });
+    .selectOption({ label: "Marca teste · PLA · Azul" });
   await page.getByLabel("Quantidade (g)").fill("1000");
   await page.getByLabel("Motivo da entrada").fill("Compra inicial");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
@@ -62,7 +69,13 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
     .selectOption({ label: "Impressora 01" });
   await page
     .getByLabel("Material", { exact: true })
-    .selectOption({ label: "PLA azul" });
+    .selectOption({ label: "Marca teste · PLA · Azul" });
+  await expect(
+    page.getByRole("option", {
+      name: "Marca teste · PETG · Vermelho",
+      exact: true,
+    }),
+  ).toHaveCount(1);
   await page.getByLabel("Quantidade de peças").fill("10");
   await page.getByLabel("Consumo estimado").fill("200");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();

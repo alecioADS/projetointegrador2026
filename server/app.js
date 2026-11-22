@@ -154,7 +154,7 @@ export function createApp({
     res.json(
       (
         await pool.query(
-          `SELECT o.*,p.name product_name,m.name material_name,r.code printer_name,r.brand printer_brand,r.model printer_model FROM production_orders o JOIN products p ON p.id=o.product_id JOIN materials m ON m.id=o.material_id JOIN printers r ON r.id=o.printer_id ORDER BY o.id DESC`,
+          `SELECT o.*,p.name product_name,m.name material_name,m.family material_family,m.color material_color,r.code printer_name,r.brand printer_brand,r.model printer_model FROM production_orders o JOIN products p ON p.id=o.product_id JOIN materials m ON m.id=o.material_id JOIN printers r ON r.id=o.printer_id ORDER BY o.id DESC`,
         )
       ).rows,
     );

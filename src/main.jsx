@@ -256,6 +256,10 @@ function App() {
       </button>
     </div>
   );
+  const materialOptions = data.materials.map((material) => ({
+    id: material.id,
+    name: `${material.name} · ${material.family} · ${material.color}`,
+  }));
   const badge = (status) => (
     <span className={"badge " + status}>{statuses[status] || status}</span>
   );
@@ -461,7 +465,10 @@ function App() {
                             <small>
                               {row.printer_brand} · {row.printer_model}
                             </small>
-                            <small>{row.material_name}</small>
+                            <small>
+                              {row.material_name} · {row.material_family} ·{" "}
+                              {row.material_color}
+                            </small>
                           </td>
                           <td>
                             {row.quantity} planejadas
@@ -619,7 +626,12 @@ function App() {
                 {fields[modal.kind]?.map((f) => input(...f))}
                 {modal.kind === "entry" && (
                   <>
-                    {input("material_id", "Material", "select", data.materials)}
+                    {input(
+                      "material_id",
+                      "Material",
+                      "select",
+                      materialOptions,
+                    )}
                     {input("quantity", "Quantidade (g)", "number")}
                     {input("reason", "Motivo da entrada")}
                   </>
@@ -678,7 +690,12 @@ function App() {
                           produção.
                         </p>
                       )}
-                    {input("material_id", "Material", "select", data.materials)}
+                    {input(
+                      "material_id",
+                      "Material",
+                      "select",
+                      materialOptions,
+                    )}
                     {input("quantity", "Quantidade de peças", "number")}
                     {input("planned_g", "Consumo estimado (g)", "number")}
                     <p className="muted">

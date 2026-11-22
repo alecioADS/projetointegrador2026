@@ -25,3 +25,7 @@ O aplicativo e os arquivos de escopo/modelo de dados/estados são a base técnic
 ## Identificação e disponibilidade de impressoras
 
 Cadastro com código único (sem distinção de maiúsculas), marca e modelo. Testes aprovados para filtro por modelo, reset da unidade ao trocar o modelo, bloqueio de ocupadas na interface e API, liberação automática na conclusão e migração repetível preservando os cadastros anteriores.
+
+## Produção com até quatro filamentos
+
+Testados limite de quatro linhas, bloqueio de repetição, filtros independentes de marca/material/cor, consumo real e custo por filamento, rollback de todas as cores em falta de saldo e preservação de ordens antigas. A jornada de navegador cobre seleção e conclusão de quatro cores, baixa independente de estoque, geração de produto uma única vez e liberação da impressora.

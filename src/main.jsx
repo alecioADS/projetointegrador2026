@@ -21,8 +21,8 @@ const statuses = {
 };
 const fields = {
   materials: [
-    ["name", "Nome"],
-    ["family", "Tipo (PLA, PETG…)"],
+    ["brand", "Marca"],
+    ["family", "Material (PLA, PETG…)"],
     ["color", "Cor"],
     ["cost_per_kg", "Custo por kg (R$)", "number"],
   ],
@@ -38,18 +38,16 @@ const fields = {
   ],
 };
 const initial = {
-  materials: { name: "", family: "PLA", color: "", cost_per_kg: "" },
+  materials: { brand: "", family: "PLA", color: "", cost_per_kg: "" },
   printers: { code: "", brand: "", model: "", status: "disponivel" },
   products: { name: "", sku: "" },
   entry: { material_id: "", quantity: "", reason: "" },
   order: {
     product_id: "",
     printer_id: "",
-    material_id: "",
     quantity: "",
-    planned_g: "",
   },
-  finish: { actual_g: "", approved_quantity: "" },
+  finish: { approved_quantity: "" },
 };
 const numeric = new Set([
   "cost_per_kg",
@@ -77,6 +75,15 @@ async function api(path, method = "GET", body) {
   return result;
 }
 function App() {
+  const emptyFilament = () => ({
+    key: crypto.randomUUID(),
+    brand: "",
+    family: "",
+    material_id: "",
+    planned_g: "",
+  });
+  const [filaments, setFilaments] = useState([emptyFilament()]);
+  const [consumptions, setConsumptions] = useState([]);
   const [printerModel, setPrinterModel] = useState("");
   const modelKey = (p) => JSON.stringify([p.brand, p.model]);
   const [page, setPage] = useState("dashboard"),
@@ -138,7 +145,10 @@ function App() {
     };
   }, [modal, busy]);
   function open(kind, row = null) {
+    if (kind === "finish")
+      setConsumptions(row.materials.map((m) => ({ ...m, actual_g: "" })));
     if (kind === "order") {
+      setFilaments([emptyFilament()]);
       setPrinterModel("");
       void refresh();
     }
@@ -171,6 +181,16 @@ function App() {
       Object.entries(form).map(([k, v]) => [k, numeric.has(k) ? Number(v) : v]),
     );
     const { kind, row } = modal;
+    if (kind === "order")
+      payload.materials = filaments.map((m) => ({
+        material_id: Number(m.material_id),
+        planned_g: Number(m.planned_g),
+      }));
+    if (kind === "finish")
+      payload.materials = consumptions.map((m) => ({
+        material_id: m.material_id,
+        actual_g: Number(m.actual_g),
+      }));
     await act(() =>
       kind === "entry"
         ? api("stock-entry", "POST", payload)
@@ -258,7 +278,7 @@ function App() {
   );
   const materialOptions = data.materials.map((material) => ({
     id: material.id,
-    name: `${material.name} · ${material.family} · ${material.color}`,
+    name: `${material.brand} · ${material.family} · ${material.color}`,
   }));
   const badge = (status) => (
     <span className={"badge " + status}>{statuses[status] || status}</span>
@@ -407,7 +427,13 @@ function App() {
                 <thead>
                   <tr>
                     {(page === "materials"
-                      ? ["Material", "Tipo / Cor", "Saldo", "Custo/kg", "Ações"]
+                      ? [
+                          "Marca",
+                          "Material / Cor",
+                          "Saldo",
+                          "Custo/kg",
+                          "Ações",
+                        ]
                       : page === "printers"
                         ? ["Código", "Marca", "Modelo", "Situação", "Ações"]
                         : page === "products"
@@ -432,7 +458,7 @@ function App() {
                     <tr key={row.id}>
                       {page === "materials" ? (
                         <>
-                          <td>{row.name}</td>
+                          <td>{row.brand}</td>
                           <td>
                             {row.family} / {row.color}
                           </td>
@@ -465,10 +491,12 @@ function App() {
                             <small>
                               {row.printer_brand} · {row.printer_model}
                             </small>
-                            <small>
-                              {row.material_name} · {row.material_family} ·{" "}
-                              {row.material_color}
-                            </small>
+                            {row.materials.map((m) => (
+                              <small key={m.material_id}>
+                                {m.brand} · {m.family} · {m.color} —{" "}
+                                {number(m.actual_g ?? m.planned_g)} g
+                              </small>
+                            ))}
                           </td>
                           <td>
                             {row.quantity} planejadas
@@ -599,7 +627,7 @@ function App() {
               <>
                 <p>
                   {modal.kind === "delete"
-                    ? `Excluir “${modal.row.code ?? modal.row.name}”? Registros com histórico vinculado não podem ser excluídos.`
+                    ? `Excluir “${modal.row.code ?? modal.row.brand ?? modal.row.name}”? Registros com histórico vinculado não podem ser excluídos.`
                     : `Cancelar a ordem #${modal.row.id}? Essa ação encerra o planejamento.`}
                 </p>
                 <div className="actions end">
@@ -690,14 +718,135 @@ function App() {
                           produção.
                         </p>
                       )}
-                    {input(
-                      "material_id",
-                      "Material",
-                      "select",
-                      materialOptions,
-                    )}
                     {input("quantity", "Quantidade de peças", "number")}
-                    {input("planned_g", "Consumo estimado (g)", "number")}
+                    <div className="filaments-heading">
+                      <h3>Filamentos da produção</h3>
+                      <small>Até 4 cores por ordem</small>
+                    </div>
+                    {filaments.map((line, index) => {
+                      const update = (changes) =>
+                        setFilaments((current) =>
+                          current.map((m) =>
+                            m.key === line.key ? { ...m, ...changes } : m,
+                          ),
+                        );
+                      const choose = (label, value, options, onChange) => (
+                        <label>
+                          {label}
+                          <select
+                            aria-label={`${label} do filamento ${index + 1}`}
+                            required
+                            value={value}
+                            onChange={(e) => onChange(e.target.value)}
+                          >
+                            <option value="">Selecione…</option>
+                            {options.map((o) => (
+                              <option
+                                key={o.id}
+                                value={o.id}
+                                disabled={o.disabled}
+                              >
+                                {o.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      );
+                      return (
+                        <fieldset className="filament-row" key={line.key}>
+                          <legend>Filamento {index + 1}</legend>
+                          {choose(
+                            "Marca",
+                            line.brand,
+                            [
+                              ...new Set(data.materials.map((m) => m.brand)),
+                            ].map((v) => ({ id: v, name: v })),
+                            (brand) =>
+                              update({ brand, family: "", material_id: "" }),
+                          )}
+                          {choose(
+                            "Material",
+                            line.family,
+                            [
+                              ...new Set(
+                                data.materials
+                                  .filter((m) => m.brand === line.brand)
+                                  .map((m) => m.family),
+                              ),
+                            ].map((v) => ({ id: v, name: v })),
+                            (family) => update({ family, material_id: "" }),
+                          )}
+                          {choose(
+                            "Cor",
+                            line.material_id,
+                            data.materials
+                              .filter(
+                                (m) =>
+                                  m.brand === line.brand &&
+                                  m.family === line.family,
+                              )
+                              .map((m) => ({
+                                id: m.id,
+                                name: m.color,
+                                disabled: filaments.some(
+                                  (other) =>
+                                    other.key !== line.key &&
+                                    Number(other.material_id) === m.id,
+                                ),
+                              })),
+                            (material_id) => update({ material_id }),
+                          )}
+                          {line.material_id && (
+                            <p className="muted">
+                              Saldo disponível:{" "}
+                              {number(
+                                data.materials.find(
+                                  (m) => m.id === Number(line.material_id),
+                                )?.stock_g ?? 0,
+                              )}{" "}
+                              g
+                            </p>
+                          )}
+                          <label>
+                            Consumo estimado (g)
+                            <input
+                              aria-label={`Consumo estimado do filamento ${index + 1} (g)`}
+                              required
+                              type="number"
+                              min="0.01"
+                              max="10000000"
+                              step="0.01"
+                              value={line.planned_g}
+                              onChange={(e) =>
+                                update({ planned_g: e.target.value })
+                              }
+                            />
+                          </label>
+                          {filaments.length > 1 && (
+                            <button
+                              type="button"
+                              className="danger"
+                              onClick={() =>
+                                setFilaments((current) =>
+                                  current.filter((m) => m.key !== line.key),
+                                )
+                              }
+                            >
+                              Remover filamento {index + 1}
+                            </button>
+                          )}
+                        </fieldset>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      disabled={filaments.length >= 4}
+                      onClick={() =>
+                        setFilaments((current) => [...current, emptyFilament()])
+                      }
+                    >
+                      + Adicionar filamento
+                    </button>
                     <p className="muted">
                       O material será descontado ao concluir a produção. Não há
                       reserva de estoque.
@@ -710,11 +859,36 @@ function App() {
                       {modal.row.quantity} peças planejadas. Informe zero
                       aprovadas em caso de falha total.
                     </p>
-                    {input(
-                      "actual_g",
-                      "Consumo real de material (g)",
-                      "number",
-                    )}
+                    {consumptions.map((line, index) => (
+                      <fieldset className="filament-row" key={line.material_id}>
+                        <legend>Filamento {index + 1}</legend>
+                        <p>
+                          {line.brand} · {line.family} · {line.color}
+                        </p>
+                        <small>Estimado: {number(line.planned_g)} g</small>
+                        <label>
+                          Consumo real (g)
+                          <input
+                            aria-label={`Consumo real do filamento ${index + 1} (g)`}
+                            required
+                            type="number"
+                            min="0"
+                            max="10000000"
+                            step="0.01"
+                            value={line.actual_g}
+                            onChange={(e) =>
+                              setConsumptions((current) =>
+                                current.map((m) =>
+                                  m.material_id === line.material_id
+                                    ? { ...m, actual_g: e.target.value }
+                                    : m,
+                                ),
+                              )
+                            }
+                          />
+                        </label>
+                      </fieldset>
+                    ))}
                     {input("approved_quantity", "Peças aprovadas", "number")}
                   </>
                 )}

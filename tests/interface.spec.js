@@ -12,14 +12,14 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await expect(page.getByRole("status")).toHaveCount(0);
   await page.getByRole("button", { name: "Materiais", exact: true }).click();
   await page.getByRole("button", { name: "+ Novo cadastro" }).click();
-  await page.getByLabel("Nome", { exact: true }).fill("Marca teste");
+  await page.getByLabel("Marca", { exact: true }).fill("Marca teste");
   await page.getByLabel("Cor", { exact: true }).fill("Azul");
   await page.getByLabel("Custo por kg").fill("100");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "+ Novo cadastro" }).click();
-  await page.getByLabel("Nome", { exact: true }).fill("Marca teste");
-  await page.getByLabel("Tipo (PLA, PETG…)").fill("PETG");
+  await page.getByLabel("Marca", { exact: true }).fill("Marca teste");
+  await page.getByLabel("Material (PLA, PETG…)").fill("PETG");
   await page.getByLabel("Cor", { exact: true }).fill("Vermelho");
   await page.getByLabel("Custo por kg").fill("120");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
@@ -68,16 +68,29 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
     .getByLabel("Impressora", { exact: true })
     .selectOption({ label: "Impressora 01" });
   await page
-    .getByLabel("Material", { exact: true })
-    .selectOption({ label: "Marca teste · PLA · Azul" });
+    .getByLabel("Marca do filamento 1", { exact: true })
+    .selectOption({ label: "Marca teste" });
+  await page
+    .getByLabel("Material do filamento 1", { exact: true })
+    .selectOption({ label: "PLA" });
+  await page
+    .getByLabel("Cor do filamento 1", { exact: true })
+    .selectOption({ label: "Azul" });
+  await page.getByRole("button", { name: "+ Adicionar filamento" }).click();
+  await page
+    .getByLabel("Marca do filamento 2", { exact: true })
+    .selectOption({ label: "Marca teste" });
+  await page
+    .getByLabel("Material do filamento 2", { exact: true })
+    .selectOption({ label: "PETG" });
   await expect(
-    page.getByRole("option", {
-      name: "Marca teste · PETG · Vermelho",
-      exact: true,
-    }),
+    page
+      .getByLabel("Cor do filamento 2", { exact: true })
+      .getByRole("option", { name: "Vermelho", exact: true }),
   ).toHaveCount(1);
+  await page.getByRole("button", { name: "Remover filamento 2" }).click();
   await page.getByLabel("Quantidade de peças").fill("10");
-  await page.getByLabel("Consumo estimado").fill("200");
+  await page.getByLabel("Consumo estimado do filamento 1 (g)").fill("200");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Iniciar", exact: true }).click();
@@ -103,7 +116,7 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Fechar", exact: true }).click();
   await page.getByRole("button", { name: "Concluir", exact: true }).click();
-  await page.getByLabel("Consumo real").fill("200");
+  await page.getByLabel("Consumo real do filamento 1 (g)").fill("200");
   await page.getByLabel("Peças aprovadas").fill("8");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -149,4 +162,107 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
     fullPage: true,
   });
   expect(errors).toEqual([]);
+});
+
+test("seleção separada e conclusão com quatro filamentos", async ({
+  page,
+}, testInfo) => {
+  const base = process.env.UI_BASE_URL || "http://127.0.0.1:5173";
+  const create = async (path, body) => {
+    const r = await page.request.post(base + "/api/" + path, { data: body });
+    expect(r.status()).toBe(201);
+    return r.json();
+  };
+  const printer = await create("printers", {
+    code: "AMS-01",
+    brand: "Bambu Lab",
+    model: "A1 AMS",
+    status: "disponivel",
+  });
+  const product = await create("products", {
+    name: "Produto AMS",
+    sku: "AMS-4",
+  });
+  const materials = [];
+  for (const color of ["Branco", "Preto", "Amarelo", "Verde"]) {
+    const m = await create("materials", {
+      brand: "Marca AMS",
+      family: "PLA",
+      color,
+      cost_per_kg: 100,
+    });
+    await create("stock-entry", {
+      material_id: m.id,
+      quantity: 100,
+      reason: "Teste AMS",
+    });
+    materials.push(m);
+  }
+  await page.goto(base);
+  await page.getByRole("button", { name: "Produção", exact: true }).click();
+  await page.getByRole("button", { name: "+ Nova ordem" }).click();
+  await page
+    .getByLabel("Produto", { exact: true })
+    .selectOption({ label: "Produto AMS" });
+  await page
+    .getByLabel("Modelo da impressora", { exact: true })
+    .selectOption({ label: "Bambu Lab · A1 AMS" });
+  await page
+    .getByLabel("Impressora", { exact: true })
+    .selectOption({ label: "AMS-01" });
+  await page.getByLabel("Quantidade de peças").fill("4");
+  for (let i = 1; i <= 4; i++) {
+    if (i > 1)
+      await page.getByRole("button", { name: "+ Adicionar filamento" }).click();
+    await page
+      .getByLabel(`Marca do filamento ${i}`, { exact: true })
+      .selectOption({ label: "Marca AMS" });
+    await page
+      .getByLabel(`Material do filamento ${i}`, { exact: true })
+      .selectOption({ label: "PLA" });
+    if (i > 1)
+      await expect(
+        page
+          .getByLabel(`Cor do filamento ${i}`, { exact: true })
+          .getByRole("option", { name: "Branco", exact: true }),
+      ).toBeDisabled();
+    await page
+      .getByLabel(`Cor do filamento ${i}`, { exact: true })
+      .selectOption({ label: materials[i - 1].color });
+    await page.getByLabel(`Consumo estimado do filamento ${i} (g)`).fill("25");
+  }
+  await expect(
+    page.getByRole("button", { name: "+ Adicionar filamento" }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page
+    .getByRole("textbox", { name: "Buscar registros" })
+    .fill("Produto AMS");
+  await page.getByRole("button", { name: "Iniciar", exact: true }).click();
+  await page.getByRole("button", { name: "Concluir", exact: true }).click();
+  for (let i = 1; i <= 4; i++)
+    await page
+      .getByLabel(`Consumo real do filamento ${i} (g)`)
+      .fill(String(i * 10));
+  await page.getByLabel("Peças aprovadas").fill("4");
+  await page.screenshot({
+    path: testInfo.outputPath("conclusao-quatro-cores.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Concluída", { exact: true })).toBeVisible();
+  const stored = await (await page.request.get(base + "/api/materials")).json();
+  expect(
+    materials.map((m) => Number(stored.find((row) => row.id === m.id).stock_g)),
+  ).toEqual([90, 80, 70, 60]);
+  const products = await (
+    await page.request.get(base + "/api/products")
+  ).json();
+  expect(products.find((p) => p.id === product.id).stock_units).toBe(4);
+  const printers = await (
+    await page.request.get(base + "/api/printers")
+  ).json();
+  expect(printers.find((p) => p.id === printer.id).availability).toBe("livre");
 });

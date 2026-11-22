@@ -1,7 +1,7 @@
 BEGIN;
 CREATE TABLE IF NOT EXISTS materials (
  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
- name varchar(120) NOT NULL CHECK (length(trim(name)) > 0),
+ brand varchar(120) NOT NULL CHECK (length(trim(brand)) > 0),
  family varchar(40) NOT NULL, color varchar(60) NOT NULL,
  stock_g numeric(12,2) NOT NULL DEFAULT 0 CHECK (stock_g >= 0),
  cost_per_kg numeric(12,2) NOT NULL DEFAULT 0 CHECK (cost_per_kg >= 0)
@@ -53,4 +53,22 @@ ALTER TABLE printers ADD COLUMN IF NOT EXISTS brand varchar(120) NOT NULL DEFAUL
 UPDATE printers SET code=left(code,100)||' #'||id WHERE lower(trim(code)) IN
  (SELECT lower(trim(code)) FROM printers GROUP BY lower(trim(code)) HAVING count(*)>1);
 CREATE UNIQUE INDEX IF NOT EXISTS printers_code_unique ON printers(lower(trim(code)));
+DO $$ BEGIN
+ IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='materials' AND column_name='name') THEN
+  ALTER TABLE materials RENAME COLUMN name TO brand;
+ END IF;
+END $$;
+CREATE TABLE IF NOT EXISTS production_order_materials (
+ order_id integer NOT NULL REFERENCES production_orders(id),
+ slot smallint NOT NULL CHECK (slot BETWEEN 1 AND 4),
+ material_id integer NOT NULL REFERENCES materials(id),
+ planned_g numeric(12,2) NOT NULL CHECK (planned_g > 0),
+ actual_g numeric(12,2) CHECK (actual_g >= 0),
+ material_cost numeric(12,2) CHECK (material_cost >= 0),
+ PRIMARY KEY(order_id,slot), UNIQUE(order_id,material_id)
+);
+-- Ordens existentes passam a ter um filamento, preservando o histórico.
+INSERT INTO production_order_materials(order_id,slot,material_id,planned_g,actual_g,material_cost)
+ SELECT id,1,material_id,planned_g,actual_g,material_cost FROM production_orders o
+ WHERE NOT EXISTS (SELECT 1 FROM production_order_materials om WHERE om.order_id=o.id);
 COMMIT;

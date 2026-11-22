@@ -482,3 +482,21 @@ footer {
 .stats article {
   box-shadow: 0 2px 8px #23313c04;
 }
+
+.filament-row {
+  border: 1px solid #d9dfe5;
+  border-radius: 10px;
+  padding: 4px 16px 16px;
+  margin: 20px 0;
+  min-width: 0;
+}
+.filament-row legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #225b85;
+  padding: 0 6px;
+}
+.filaments-heading h3 {
+  font-size: 15px;
+  margin-bottom: 4px;
+}

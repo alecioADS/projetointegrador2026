@@ -21,7 +21,7 @@ export function createApp({
   const schemas = {
     materials: z
       .object({
-        name: text(120),
+        brand: text(120),
         family: text(40),
         color: text(60),
         cost_per_kg: z.number().min(0).max(10000000).multipleOf(0.01),
@@ -120,7 +120,7 @@ export function createApp({
     res.json(
       (
         await pool.query(
-          `SELECT m.*,coalesce(a.name,p.name) item FROM stock_movements m LEFT JOIN materials a ON a.id=m.material_id LEFT JOIN products p ON p.id=m.product_id ORDER BY m.id DESC`,
+          `SELECT m.*,coalesce(a.brand||' · '||a.family||' · '||a.color,p.name) item FROM stock_movements m LEFT JOIN materials a ON a.id=m.material_id LEFT JOIN products p ON p.id=m.product_id ORDER BY m.id DESC`,
         )
       ).rows,
     );
@@ -151,25 +151,62 @@ export function createApp({
     );
   });
   app.get("/api/orders", async (req, res) => {
+    const orders = (
+      await pool.query(
+        `SELECT o.*,p.name product_name,m.brand material_name,m.family material_family,m.color material_color,r.code printer_name,r.brand printer_brand,r.model printer_model FROM production_orders o JOIN products p ON p.id=o.product_id JOIN materials m ON m.id=o.material_id JOIN printers r ON r.id=o.printer_id ORDER BY o.id DESC`,
+      )
+    ).rows;
+    const lines = (
+      await pool.query(
+        `SELECT om.*,m.brand,m.family,m.color FROM production_order_materials om JOIN materials m ON m.id=om.material_id ORDER BY om.order_id,om.slot`,
+      )
+    ).rows;
+    const grouped = new Map();
+    for (const line of lines) {
+      if (!grouped.has(line.order_id)) grouped.set(line.order_id, []);
+      grouped.get(line.order_id).push(line);
+    }
     res.json(
-      (
-        await pool.query(
-          `SELECT o.*,p.name product_name,m.name material_name,m.family material_family,m.color material_color,r.code printer_name,r.brand printer_brand,r.model printer_model FROM production_orders o JOIN products p ON p.id=o.product_id JOIN materials m ON m.id=o.material_id JOIN printers r ON r.id=o.printer_id ORDER BY o.id DESC`,
-        )
-      ).rows,
+      orders.map((order) => ({
+        ...order,
+        materials: grouped.get(order.id) || [],
+      })),
     );
   });
   app.post("/api/orders", async (req, res) => {
-    const data = z
-      .object({
-        product_id: z.number().int().positive(),
-        printer_id: z.number().int().positive(),
-        material_id: z.number().int().positive(),
-        quantity: z.number().int().positive().max(1000000),
-        planned_g: positive,
-      })
-      .strict()
+    const base = {
+      product_id: z.number().int().positive(),
+      printer_id: z.number().int().positive(),
+      quantity: z.number().int().positive().max(1000000),
+    };
+    const lineSchema = z
+      .object({ material_id: z.number().int().positive(), planned_g: positive })
+      .strict();
+    const parsed = z
+      .union([
+        z
+          .object({ ...base, materials: z.array(lineSchema).min(1).max(4) })
+          .strict(),
+        z
+          .object({
+            ...base,
+            material_id: z.number().int().positive(),
+            planned_g: positive,
+          })
+          .strict(),
+      ])
       .parse(req.body);
+    const data = {
+      ...parsed,
+      materials: parsed.materials || [
+        { material_id: parsed.material_id, planned_g: parsed.planned_g },
+      ],
+    };
+    if (
+      new Set(data.materials.map((m) => m.material_id)).size !==
+      data.materials.length
+    )
+      fail("Selecione cada filamento apenas uma vez.", 400);
     const order = await transaction(async (c) => {
       const printer = await row(c, "printers", data.printer_id);
       if (printer.status !== "disponivel")
@@ -185,18 +222,24 @@ export function createApp({
         fail(
           "A impressora está ocupada. Aguarde a conclusão da produção atual.",
         );
-      return (
+      const order = (
         await c.query(
           "INSERT INTO production_orders(product_id,printer_id,material_id,quantity,planned_g) VALUES ($1,$2,$3,$4,$5) RETURNING *",
           [
             data.product_id,
             data.printer_id,
-            data.material_id,
+            data.materials[0].material_id,
             data.quantity,
-            data.planned_g,
+            data.materials.reduce((sum, m) => sum + m.planned_g, 0),
           ],
         )
       ).rows[0];
+      for (const [index, line] of data.materials.entries())
+        await c.query(
+          "INSERT INTO production_order_materials(order_id,slot,material_id,planned_g) VALUES ($1,$2,$3,$4)",
+          [order.id, index + 1, line.material_id, line.planned_g],
+        );
+      return order;
     });
     res.status(201).json(order);
   });
@@ -206,11 +249,34 @@ export function createApp({
     const completion =
       action === "finish"
         ? z
-            .object({
-              actual_g: positive,
-              approved_quantity: z.number().int().min(0).max(1000000),
-            })
-            .strict()
+            .union([
+              z
+                .object({
+                  approved_quantity: z.number().int().min(0).max(1000000),
+                  materials: z
+                    .array(
+                      z
+                        .object({
+                          material_id: z.number().int().positive(),
+                          actual_g: z
+                            .number()
+                            .min(0)
+                            .max(10000000)
+                            .multipleOf(0.01),
+                        })
+                        .strict(),
+                    )
+                    .min(1)
+                    .max(4),
+                })
+                .strict(),
+              z
+                .object({
+                  actual_g: positive,
+                  approved_quantity: z.number().int().min(0).max(1000000),
+                })
+                .strict(),
+            ])
             .parse(req.body)
         : null;
     res.json(
@@ -249,20 +315,60 @@ export function createApp({
             fail("Somente ordens em produção podem ser concluídas.");
           if (completion.approved_quantity > order.quantity)
             fail("Quantidade aprovada maior que a planejada.", 400);
-          const material = await row(c, "materials", order.material_id);
-          if (Number(material.stock_g) < completion.actual_g)
-            fail("Estoque de material insuficiente.");
-          await c.query("UPDATE materials SET stock_g=stock_g-$1 WHERE id=$2", [
-            completion.actual_g,
-            material.id,
-          ]);
+          const planned = (
+            await c.query(
+              "SELECT * FROM production_order_materials WHERE order_id=$1 ORDER BY material_id",
+              [key],
+            )
+          ).rows;
+          if (!completion.materials && planned.length !== 1)
+            fail("Informe o consumo de cada filamento.", 400);
+          const consumed = completion.materials || [
+            {
+              material_id: planned[0].material_id,
+              actual_g: completion.actual_g,
+            },
+          ];
+          const byId = new Map(consumed.map((m) => [m.material_id, m]));
+          if (
+            byId.size !== consumed.length ||
+            consumed.length !== planned.length ||
+            planned.some((m) => !byId.has(m.material_id))
+          )
+            fail(
+              "Os filamentos informados devem corresponder aos da ordem, sem repetições.",
+              400,
+            );
+          if (consumed.every((m) => m.actual_g === 0))
+            fail(
+              "Informe consumo maior que zero em pelo menos um filamento.",
+              400,
+            );
+          // Mesma ordem de bloqueio para todas as transações evita deadlocks entre cores.
+          for (const line of planned) {
+            const material = await row(c, "materials", line.material_id),
+              amount = byId.get(line.material_id).actual_g;
+            if (Number(material.stock_g) < amount)
+              fail(
+                `Estoque insuficiente: ${material.brand} · ${material.family} · ${material.color}.`,
+              );
+            await c.query(
+              "UPDATE materials SET stock_g=stock_g-$1 WHERE id=$2",
+              [amount, material.id],
+            );
+            await c.query(
+              "UPDATE production_order_materials SET actual_g=$1,material_cost=round($1::numeric * $2::numeric / 1000,2) WHERE order_id=$3 AND material_id=$4",
+              [amount, material.cost_per_kg, key, material.id],
+            );
+            if (amount > 0)
+              await c.query(
+                "INSERT INTO stock_movements(material_id,order_id,quantity,reason) VALUES ($1,$2,$3,'Consumo de produção')",
+                [material.id, key, -amount],
+              );
+          }
           await c.query(
             "UPDATE products SET stock_units=stock_units+$1 WHERE id=$2",
             [completion.approved_quantity, order.product_id],
-          );
-          await c.query(
-            "INSERT INTO stock_movements(material_id,order_id,quantity,reason) VALUES ($1,$2,$3,'Consumo de produção')",
-            [material.id, key, -completion.actual_g],
           );
           if (completion.approved_quantity > 0)
             await c.query(
@@ -270,13 +376,8 @@ export function createApp({
               [order.product_id, key, completion.approved_quantity],
             );
           await c.query(
-            "UPDATE production_orders SET status='concluida',actual_g=$1,approved_quantity=$2,material_cost=round($1::numeric * $3::numeric / 1000,2),finished_at=now() WHERE id=$4",
-            [
-              completion.actual_g,
-              completion.approved_quantity,
-              material.cost_per_kg,
-              key,
-            ],
+            "UPDATE production_orders SET status='concluida',actual_g=(SELECT sum(actual_g) FROM production_order_materials WHERE order_id=$1),approved_quantity=$2,material_cost=(SELECT sum(material_cost) FROM production_order_materials WHERE order_id=$1),finished_at=now() WHERE id=$1",
+            [key, completion.approved_quantity],
           );
         }
         return (

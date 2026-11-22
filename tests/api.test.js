@@ -15,7 +15,12 @@ before(async () => {
   const { createApp } = await import("../server/app.js");
   if (!url) {
     embedded = new PGlite();
-    await embedded.exec(schema);
+    try {
+      await embedded.exec(schema);
+    } catch (error) {
+      await embedded.exec("ROLLBACK");
+      throw error;
+    }
     const adapt = (db) => ({
       query: async (sql, values) => {
         const r = await db.query(sql, values);
@@ -70,7 +75,7 @@ async function create(path, data) {
 }
 test("CRUD, validação, produção transacional, concorrência e preservação do histórico", async () => {
   const material = await create("materials", {
-    name: "PLA teste",
+    brand: "PLA teste",
     family: "PLA",
     color: "Azul",
     cost_per_kg: 100,
@@ -97,7 +102,7 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   assert.equal(
     (
       await request("materials", "POST", {
-        name: "",
+        brand: "",
         family: "PLA",
         color: "Azul",
         cost_per_kg: 100,
@@ -113,7 +118,7 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   assert.equal(
     (
       await request("materials/" + material.id, "PUT", {
-        name: "PLA editado",
+        brand: "PLA editado",
         family: "PLA",
         color: "Azul",
         cost_per_kg: 100,
@@ -275,4 +280,143 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   assert.equal((await request("products/" + spare.id, "DELETE")).status, 204);
   assert.equal((await request("products/" + spare.id, "DELETE")).status, 404);
   assert.equal((await request("dashboard")).status, 200);
+});
+
+test("produção de quatro cores valida limite, repetição, consumo por cor e rollback integral", async () => {
+  const printer = await create("printers", {
+    code: "MULTI-01",
+    brand: "Bambu Lab",
+    model: "A1",
+    status: "disponivel",
+  });
+  const product = await create("products", {
+    name: "Peça multicolor",
+    sku: "MULTI-4",
+  });
+  const materials = [];
+  for (const [i, color] of ["Azul", "Vermelho", "Verde", "Amarelo"].entries()) {
+    const material = await create("materials", {
+      brand: "Marca multicolor",
+      family: "PLA",
+      color,
+      cost_per_kg: (i + 1) * 100,
+    });
+    await create("stock-entry", {
+      material_id: material.id,
+      quantity: 100,
+      reason: "Teste multicolor",
+    });
+    materials.push(material);
+  }
+  const lines = materials.map((m) => ({ material_id: m.id, planned_g: 10 }));
+  const payload = {
+    product_id: product.id,
+    printer_id: printer.id,
+    quantity: 2,
+    materials: lines,
+  };
+  assert.equal(
+    (
+      await request("orders", "POST", {
+        ...payload,
+        materials: [...lines, lines[0]],
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("orders", "POST", {
+        ...payload,
+        materials: [lines[0], lines[0]],
+      })
+    ).status,
+    400,
+  );
+  const order = await create("orders", payload);
+  const stored = (await request("orders")).body.find((o) => o.id === order.id);
+  assert.equal(stored.materials.length, 4);
+  assert.equal(Number(stored.planned_g), 40);
+  assert.equal((await request(`orders/${order.id}/start`, "POST")).status, 200);
+  const consume = [10, 20, 0, 5].map((actual_g, i) => ({
+    material_id: materials[i].id,
+    actual_g,
+  }));
+  assert.equal(
+    (
+      await request(`orders/${order.id}/finish`, "POST", {
+        actual_g: 35,
+        approved_quantity: 2,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request(`orders/${order.id}/finish`, "POST", {
+        approved_quantity: 2,
+        materials: consume.slice(0, 3),
+      })
+    ).status,
+    400,
+  );
+  const before = (await request("movements")).body.length;
+  const tooMuch = consume.map((m, i) => ({
+    ...m,
+    actual_g: i === 3 ? 101 : m.actual_g,
+  }));
+  assert.equal(
+    (
+      await request(`orders/${order.id}/finish`, "POST", {
+        approved_quantity: 2,
+        materials: tooMuch,
+      })
+    ).status,
+    409,
+  );
+  assert.equal((await request("movements")).body.length, before);
+  assert.deepEqual(
+    (await request("materials")).body
+      .filter((m) => materials.some((v) => v.id === m.id))
+      .map((m) => Number(m.stock_g)),
+    [100, 100, 100, 100],
+  );
+  assert.equal(
+    (
+      await request(`orders/${order.id}/finish`, "POST", {
+        approved_quantity: 2,
+        materials: consume,
+      })
+    ).status,
+    200,
+  );
+  const completed = (await request("orders")).body.find(
+    (o) => o.id === order.id,
+  );
+  assert.equal(Number(completed.actual_g), 35);
+  assert.equal(Number(completed.material_cost), 7);
+  assert.deepEqual(
+    completed.materials.map((m) => Number(m.actual_g)),
+    [10, 20, 0, 5],
+  );
+  assert.equal(
+    (await request("products")).body.find((p) => p.id === product.id)
+      .stock_units,
+    2,
+  );
+  assert.equal((await request("movements")).body.length, before + 4);
+  assert.equal(
+    (await request("printers")).body.find((p) => p.id === printer.id)
+      .availability,
+    "livre",
+  );
+  assert.equal(
+    (
+      await request(`orders/${order.id}/finish`, "POST", {
+        approved_quantity: 2,
+        materials: consume,
+      })
+    ).status,
+    409,
+  );
 });

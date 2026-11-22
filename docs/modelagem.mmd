@@ -1,6 +1,7 @@
 %% Modelo relacional. Renderize cada bloco separadamente em um editor Mermaid.
 erDiagram
- MATERIALS ||--o{ PRODUCTION_ORDERS : utiliza
+ MATERIALS ||--o{ PRODUCTION_ORDER_MATERIALS : utiliza
+ PRODUCTION_ORDERS ||--|{ PRODUCTION_ORDER_MATERIALS : contem
  PRINTERS ||--o{ PRODUCTION_ORDERS : executa
  PRODUCTS ||--o{ PRODUCTION_ORDERS : produz
  MATERIALS |o--o{ STOCK_MOVEMENTS : movimenta
@@ -8,7 +9,7 @@ erDiagram
  PRODUCTION_ORDERS |o--o{ STOCK_MOVEMENTS : gera
  MATERIALS {
   int id PK
-  varchar name
+  varchar brand
   varchar family
   varchar color
   numeric stock_g
@@ -50,3 +51,13 @@ erDiagram
   varchar reason
   timestamptz created_at
  }
+
+ PRODUCTION_ORDER_MATERIALS {
+  int order_id PK,FK
+  smallint slot PK
+  int material_id FK
+  numeric planned_g
+  numeric actual_g
+  numeric material_cost
+ }
+%% slot 1..4; único (order_id,material_id). O material_id na ordem é mantido como referência legada ao primeiro filamento.

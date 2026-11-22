@@ -4,11 +4,11 @@ Versão acadêmica independente do [AvsLabs3D](https://github.com/alecioADS/AvsL
 
 ## Escopo
 
-Uma empresa e um operador local. CRUD de materiais, impressoras e produtos; entrada e histórico de estoque; planejamento, início, conclusão e cancelamento de ordens; painel de indicadores. Sem Supabase, contas, serviços de nuvem ou autenticação. Sem compras, vendas, financeiro, variantes, montagem ou sincronização offline. Uma ordem usa um material, uma impressora e um produto.
+Uma empresa e um operador local. CRUD de materiais, impressoras e produtos; entrada e histórico de estoque; planejamento, início, conclusão e cancelamento de ordens; painel de indicadores. Sem Supabase, contas, serviços de nuvem ou autenticação. Sem compras, vendas, financeiro, variantes, montagem ou sincronização offline. Uma ordem usa de um a quatro filamentos, uma impressora e um produto. Cada filamento possui marca, material (PLA, PETG etc.) e cor, selecionados separadamente na produção.
 
 **Stack:** React + Vite, API Node.js/Express e PostgreSQL. Impressoras têm código único, marca e modelo. Ao planejar uma produção, selecione o modelo e uma unidade livre; unidades ocupadas ou em manutenção ficam indisponíveis. A conclusão da ordem libera a unidade automaticamente.
 
-O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com cinco tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
+O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com seis tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
 
 ## Abrir no dia da apresentação
 
@@ -46,7 +46,7 @@ npm run db:setup
 npm run dev
 ```
 
-Abra **http://127.0.0.1:5173**. Banco inicialmente vazio. `db:setup` cria as tabelas sem apagar registros e aplica a atualização de impressoras (código e marca). Nos cadastros anteriores, o antigo nome é preservado como código; a marca fica “Não informada” até ser corrigida na edição. Códigos antigos repetidos recebem o ID como sufixo.
+Abra **http://127.0.0.1:5173**. Banco inicialmente vazio. `db:setup` cria as tabelas sem apagar registros e aplica as atualizações de impressoras (código e marca), de filamentos (nome passa a marca) e de ordens (até quatro filamentos). As ordens antigas são convertidas em ordens com um único filamento, sem alterar consumo, custo ou estoque. Nos cadastros anteriores, o antigo nome é preservado como código; a marca fica “Não informada” até ser corrigida na edição. Códigos antigos repetidos recebem o ID como sufixo.
 
 Para a apresentação, também é possível servir tudo em uma porta:
 
@@ -71,7 +71,8 @@ Abra **http://127.0.0.1:3001**. A API se recusa a iniciar se não conseguir cone
 
 - Saldo de material em gramas; produto em unidades inteiras. Entradas só em materiais; o produto entra pela produção.
 - Saldo inicial zero. Toda alteração de estoque feita pela aplicação gera movimento na mesma transação.
-- Conclusão bloqueia ordem e material para impedir consumo duplicado ou saldo negativo sob concorrência.
+- Conclusão bloqueia a ordem e os filamentos em ordem de ID para impedir consumo duplicado, saldo negativo e deadlocks. Cada cor recebe consumo real e custo próprios; todos os estoques e o produto são atualizados em uma única transação. Se qualquer cor tiver saldo insuficiente, nenhuma alteração é confirmada.
+- Uma ordem aceita de um a quatro filamentos distintos. Na conclusão, é permitido informar zero em cores não utilizadas, desde que o consumo total seja maior que zero.
 - Apenas uma ordem em produção por impressora. Impressora em manutenção não inicia produção; impressora ocupada não entra em manutenção.
 - Ordem planejada pode ser cancelada. Após iniciar, deve ser concluída com o consumo real, inclusive falha total (zero peças aprovadas).
 - Não há reserva de material ao planejar ou iniciar. Saldo suficiente é exigido na conclusão.

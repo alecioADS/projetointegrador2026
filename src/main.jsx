@@ -261,10 +261,11 @@ function App() {
             setPage("dashboard");
           }}
         >
-          <span className="brand-mark">AVS</span>
-          <strong>
-            Labs 3D<small>GESTÃO • PROJETO INTEGRADOR</small>
-          </strong>
+          <img
+            className="brand-logo"
+            src="/brand/avs-labs-3d.png"
+            alt="AVS Labs 3D"
+          />
         </a>
         <nav aria-label="Navegação principal">
           {Object.entries(labels).map(([key, label], i) => (
@@ -286,8 +287,8 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <span className="dot" /> PostgreSQL local
-          <small>AVS Labs 3D · Edição acadêmica</small>
+          <span className="dot" /> Gestão de estoque e produção
+          <small>AVS Labs 3D</small>
         </div>
       </aside>
       <main>
@@ -347,7 +348,7 @@ function App() {
             <section className="panel intro">
               <div>
                 <p className="eyebrow">SUA LINHA DE PRODUÇÃO</p>
-                <h2>Planeje. Imprima. Acompanhe.</h2>
+                <h2>Planeje, imprima e acompanhe!</h2>
                 <p className="muted">
                   Cadastre materiais, registre entradas e acompanhe cada ordem
                   até a conclusão. O consumo e as peças aprovadas atualizam o
@@ -357,9 +358,11 @@ function App() {
                   Acessar produção →
                 </button>
               </div>
-              <div className="cube" aria-hidden="true">
-                ◇
-              </div>
+              <div
+                className="brand-symbol"
+                role="img"
+                aria-label="Símbolo AVS Labs 3D"
+              />
             </section>
             <section className="panel">
               <h2>Como começar</h2>
@@ -542,7 +545,7 @@ function App() {
             </div>
           </section>
         )}
-        <footer>AVS Labs 3D · Gestão de estoque e produção · PI 2026</footer>
+        <footer>AVS Labs 3D · Gestão de estoque e produção</footer>
       </main>
       {modal && (
         <div className="overlay">

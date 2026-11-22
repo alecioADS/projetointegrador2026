@@ -86,5 +86,10 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({
+    path: testInfo.outputPath("inicio-desktop.png"),
+    fullPage: true,
+  });
   expect(errors).toEqual([]);
 });

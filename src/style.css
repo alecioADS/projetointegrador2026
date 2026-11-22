@@ -5,10 +5,10 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #eaf0ff;
-  background: #05060a;
+  color: #24313e;
+  background: #f5f6f8;
   font-synthesis: none;
-  color-scheme: dark;
+  color-scheme: light;
   font-variant-numeric: tabular-nums;
 }
 * {
@@ -24,15 +24,15 @@ select {
 }
 button {
   cursor: pointer;
-  background: #1a1d2a;
-  border: 1px solid #ffffff20;
-  color: #eaf0ff;
+  background: #ffffff;
+  border: 1px solid #d9dfe5;
+  color: #24313e;
   border-radius: 9px;
   padding: 10px 14px;
   font-size: 13px;
 }
 button:hover {
-  border-color: #00e0ff;
+  border-color: #225b85;
 }
 button:disabled {
   opacity: 0.5;
@@ -40,16 +40,17 @@ button:disabled {
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #00e0ff;
+  outline: 2px solid #225b85;
   outline-offset: 3px;
 }
 .primary {
-  background: linear-gradient(110deg, #2b5cff, #7b3bff);
+  background: #225b85;
+  color: #ffffff;
   border-color: transparent;
   font-weight: 600;
 }
 .danger {
-  color: #ff8399;
+  color: #a44040;
 }
 .layout {
   display: flex;
@@ -58,8 +59,8 @@ a:focus-visible {
 aside {
   width: 245px;
   flex-shrink: 0;
-  border-right: 1px solid #ffffff12;
-  background: #0a0c13;
+  border-right: 1px solid #e1e5e9;
+  background: #ffffff;
   padding: 32px 18px;
   display: flex;
   flex-direction: column;
@@ -75,29 +76,18 @@ aside {
   color: inherit;
   padding: 0 8px 35px;
 }
-.brand-mark {
-  font-size: 29px;
-  font-weight: 900;
-  background: linear-gradient(100deg, #00e0ff, #2b5cff, #f02be0);
-  background-clip: text;
-  color: transparent;
-}
-.brand strong {
-  font-size: 19px;
-  white-space: nowrap;
+.brand-logo {
+  display: block;
+  width: 100%;
+  max-width: 195px;
+  height: auto;
+  object-fit: contain;
 }
 small {
   display: block;
-  color: #a6afc6;
+  color: #647181;
   font-size: 11px;
   margin-top: 6px;
-}
-.brand small {
-  white-space: normal;
-  max-width: 125px;
-  line-height: 1.5;
-  font-size: 8px;
-  letter-spacing: 1px;
 }
 nav {
   display: grid;
@@ -107,7 +97,7 @@ nav button {
   border: 0;
   background: none;
   text-align: left;
-  color: #a6afc6;
+  color: #647181;
   padding: 14px 16px;
   font-size: 14px;
 }
@@ -117,21 +107,21 @@ nav button span {
   font-size: 18px;
 }
 nav .active {
-  background: #2b5cff22;
-  color: #69eaff;
-  box-shadow: inset 3px 0 #00e0ff;
+  background: #edf2f6;
+  color: #214f72;
+  box-shadow: inset 3px 0 #b59a44;
 }
 .sidebar-note {
   margin-top: auto;
   padding: 20px 10px 0;
   font-size: 12px;
-  color: #a6afc6;
+  color: #647181;
 }
 .dot {
   display: inline-block;
   width: 7px;
   height: 7px;
-  background: #17e59b;
+  background: #5e8774;
   border-radius: 50%;
   margin-right: 7px;
 }
@@ -160,11 +150,11 @@ h2 {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #76cbff;
+  color: #6a737b;
   margin: 0;
 }
 .muted {
-  color: #a6afc6;
+  color: #647181;
   font-size: 13px;
   line-height: 1.7;
   margin: 8px 0;
@@ -187,13 +177,13 @@ h2 {
 }
 .stats article,
 .panel {
-  border: 1px solid #ffffff14;
-  background: #11131c;
+  border: 1px solid #e0e4e8;
+  background: #ffffff;
   border-radius: 16px;
   padding: 24px;
 }
 .stats span {
-  color: #a6afc6;
+  color: #647181;
   font-size: 13px;
 }
 .stats strong {
@@ -209,8 +199,9 @@ h2 {
   justify-content: space-between;
   align-items: center;
   min-height: 250px;
-  background:
-    radial-gradient(ellipse at right, #2b5cff20, transparent 70%), #11131c;
+  background: #ffffff;
+  border-top: 3px solid #cfbb76;
+  gap: 36px;
 }
 .intro > div:first-child {
   max-width: 540px;
@@ -222,16 +213,16 @@ h2 {
 .intro button {
   margin-top: 18px;
 }
-.cube {
-  font-size: 160px;
-  line-height: 1;
-  color: #7867ff;
-  text-shadow: 20px 0 #00e0ff55;
-  padding: 0 35px;
+.brand-symbol {
+  flex-shrink: 0;
+  width: 170px;
+  height: 190px;
+  background: url("/brand/avs-labs-3d.png") right center / auto 100% no-repeat;
+  margin: 0 25px;
 }
 .steps {
   padding-left: 20px;
-  color: #a6afc6;
+  color: #647181;
   font-size: 14px;
   line-height: 2.2;
 }
@@ -250,9 +241,9 @@ h2 {
 }
 input,
 select {
-  background: #080a11;
-  color: #eaf0ff;
-  border: 1px solid #ffffff26;
+  background: #ffffff;
+  color: #24313e;
+  border: 1px solid #ced5dd;
   border-radius: 8px;
   padding: 11px;
   width: 100%;
@@ -260,7 +251,7 @@ select {
 }
 input:focus,
 select:focus {
-  border-color: #00e0ff;
+  border-color: #225b85;
 }
 .table-wrap {
   overflow: auto;
@@ -273,14 +264,14 @@ table {
   white-space: nowrap;
 }
 th {
-  color: #a6afc6;
+  color: #647181;
   font-weight: 500;
   padding: 14px 12px;
-  border-bottom: 1px solid #ffffff20;
+  border-bottom: 1px solid #d9dfe5;
 }
 td {
   padding: 18px 12px;
-  border-bottom: 1px solid #ffffff0c;
+  border-bottom: 1px solid #e9edf0;
 }
 td .actions button {
   padding: 7px 10px;
@@ -291,38 +282,38 @@ td .actions button {
   font-size: 11px;
   padding: 6px 9px;
   border-radius: 6px;
-  background: #ffffff0a;
-  color: #a6afc6;
+  background: #f0f2f4;
+  color: #647181;
   margin: 2px;
 }
 .concluida,
 .disponivel {
-  background: #17e59b12;
-  color: #56e9b5;
+  background: #eaf2ed;
+  color: #386b50;
 }
 .em_producao {
-  background: #2b5cff25;
-  color: #87b0ff;
+  background: #eaf0f6;
+  color: #3a6385;
 }
 .planejada {
-  background: #ffb02014;
-  color: #ffc86d;
+  background: #f7f1df;
+  color: #786128;
 }
 .manutencao,
 .cancelada {
-  background: #ff4d6d12;
-  color: #ff8399;
+  background: #f8eded;
+  color: #a44040;
 }
 .positive {
-  color: #56e9b5;
+  color: #386b50;
 }
 .negative {
-  color: #ff8399;
+  color: #a44040;
 }
 .empty {
   text-align: center;
   padding: 55px 20px;
-  color: #a6afc6;
+  color: #647181;
   font-size: 14px;
 }
 .alert {
@@ -332,17 +323,17 @@ td .actions button {
   font-size: 13px;
 }
 .error {
-  background: #ff4d6d19;
-  color: #ffb6c3;
-  border: 1px solid #ff4d6d44;
+  background: #fbefef;
+  color: #923c3c;
+  border: 1px solid #e8c7c7;
 }
 .success {
-  background: #17e59b15;
-  color: #56e9b5;
+  background: #edf5f0;
+  color: #386b50;
 }
 footer {
   font-size: 11px;
-  color: #78829c;
+  color: #717c88;
   padding-top: 15px;
 }
 .overlay {
@@ -357,8 +348,8 @@ footer {
   z-index: 10;
 }
 .modal {
-  background: #11131c;
-  border: 1px solid #ffffff25;
+  background: #ffffff;
+  border: 1px solid #d7dde3;
   border-radius: 18px;
   padding: 26px;
   width: 500px;
@@ -379,7 +370,7 @@ footer {
   display: block;
   margin: 16px 0;
   font-size: 13px;
-  color: #a6afc6;
+  color: #647181;
 }
 .modal label input,
 .modal label select {
@@ -400,8 +391,10 @@ footer {
   .stats {
     grid-template-columns: repeat(2, 1fr);
   }
-  .cube {
-    display: none;
+  .brand-symbol {
+    width: 109px;
+    height: 122px;
+    margin: 0;
   }
   header {
     align-items: flex-start;
@@ -418,7 +411,7 @@ footer {
     position: static;
     padding: 18px;
     border-right: 0;
-    border-bottom: 1px solid #ffffff20;
+    border-bottom: 1px solid #d9dfe5;
   }
   .brand {
     padding: 0 0 16px;
@@ -456,12 +449,32 @@ footer {
   .stats article {
     padding: 18px;
   }
+  .intro {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 16px;
+  }
   .intro h2 {
     font-size: 23px;
+  }
+  .brand-symbol {
+    width: 74px;
+    height: 83px;
+  }
+  .brand-logo {
+    max-width: 180px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
   }
+}
+
+.primary:hover {
+  background: #194969;
+  border-color: #194969;
+}
+.stats article {
+  box-shadow: 0 2px 8px #23313c04;
 }

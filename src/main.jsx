@@ -539,6 +539,18 @@ function App() {
                                   </button>
                                 </>
                               )}
+                              {row.status === "cancelada" && (
+                                <button
+                                  className="danger"
+                                  disabled={busy}
+                                  onClick={() => {
+                                    setError("");
+                                    setModal({ kind: "delete-order", row });
+                                  }}
+                                >
+                                  Apagar
+                                </button>
+                              )}
                               {row.status === "em_producao" && (
                                 <button
                                   className="primary"
@@ -596,19 +608,21 @@ function App() {
           >
             <div className="modal-header">
               <h2 id="modal-title">
-                {modal.kind === "delete"
-                  ? "Excluir cadastro"
-                  : modal.kind === "cancel"
-                    ? "Cancelar ordem"
-                    : modal.kind === "entry"
-                      ? "Entrada de material"
-                      : modal.kind === "order"
-                        ? "Nova ordem de produção"
-                        : modal.kind === "finish"
-                          ? "Concluir produção"
-                          : modal.row
-                            ? "Editar cadastro"
-                            : "Novo cadastro"}
+                {modal.kind === "delete-order"
+                  ? "Apagar ordem cancelada"
+                  : modal.kind === "delete"
+                    ? "Excluir cadastro"
+                    : modal.kind === "cancel"
+                      ? "Cancelar ordem"
+                      : modal.kind === "entry"
+                        ? "Entrada de material"
+                        : modal.kind === "order"
+                          ? "Nova ordem de produção"
+                          : modal.kind === "finish"
+                            ? "Concluir produção"
+                            : modal.row
+                              ? "Editar cadastro"
+                              : "Novo cadastro"}
               </h2>
               <button
                 aria-label="Fechar"
@@ -623,12 +637,14 @@ function App() {
                 {error}
               </div>
             )}
-            {["delete", "cancel"].includes(modal.kind) ? (
+            {["delete", "cancel", "delete-order"].includes(modal.kind) ? (
               <>
                 <p>
-                  {modal.kind === "delete"
-                    ? `Excluir “${modal.row.code ?? modal.row.brand ?? modal.row.name}”? Registros com histórico vinculado não podem ser excluídos.`
-                    : `Cancelar a ordem #${modal.row.id}? Essa ação encerra o planejamento.`}
+                  {modal.kind === "delete-order"
+                    ? `Apagar definitivamente a ordem #${modal.row.id}? Ela será removida da lista.`
+                    : modal.kind === "delete"
+                      ? `Excluir “${modal.row.code ?? modal.row.brand ?? modal.row.name}”? Registros com histórico vinculado não podem ser excluídos.`
+                      : `Cancelar a ordem #${modal.row.id}? Essa ação encerra o planejamento.`}
                 </p>
                 <div className="actions end">
                   <button disabled={busy} onClick={() => setModal(null)}>
@@ -639,9 +655,11 @@ function App() {
                     disabled={busy}
                     onClick={() =>
                       act(() =>
-                        modal.kind === "delete"
-                          ? api(`${page}/${modal.row.id}`, "DELETE")
-                          : api(`orders/${modal.row.id}/cancel`, "POST"),
+                        modal.kind === "delete-order"
+                          ? api(`orders/${modal.row.id}`, "DELETE")
+                          : modal.kind === "delete"
+                            ? api(`${page}/${modal.row.id}`, "DELETE")
+                            : api(`orders/${modal.row.id}/cancel`, "POST"),
                       )
                     }
                   >

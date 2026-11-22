@@ -266,3 +266,52 @@ test("seleção separada e conclusão com quatro filamentos", async ({
   ).json();
   expect(printers.find((p) => p.id === printer.id).availability).toBe("livre");
 });
+
+test("apaga ordem cancelada após confirmação", async ({ page }) => {
+  const base = process.env.UI_BASE_URL || "http://127.0.0.1:5173";
+  const create = async (path, data) => {
+    const r = await page.request.post(base + "/api/" + path, { data });
+    expect(r.status()).toBe(201);
+    return r.json();
+  };
+  const material = await create("materials", {
+    brand: "Teste exclusão",
+    family: "PLA",
+    color: "Azul",
+    cost_per_kg: 100,
+  });
+  const printer = await create("printers", {
+    code: "DEL-01",
+    brand: "Bambu Lab",
+    model: "A1",
+    status: "disponivel",
+  });
+  const product = await create("products", {
+    name: "Produto para apagar ordem",
+    sku: "DEL-01",
+  });
+  await create("orders", {
+    printer_id: printer.id,
+    product_id: product.id,
+    quantity: 1,
+    materials: [{ material_id: material.id, planned_g: 10 }],
+  });
+  await page.goto(base);
+  await page.getByRole("button", { name: "Produção", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Buscar registros" })
+    .fill("Produto para apagar ordem");
+  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Apagar", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Apagar ordem cancelada" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Voltar", exact: true }).click();
+  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await page.getByRole("button", { name: "Apagar", exact: true }).click();
+  await page.getByRole("button", { name: "Confirmar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("tbody tr")).toHaveCount(0);
+});

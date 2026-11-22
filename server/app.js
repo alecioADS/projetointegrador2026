@@ -243,6 +243,30 @@ export function createApp({
     });
     res.status(201).json(order);
   });
+  app.delete("/api/orders/:id", async (req, res) => {
+    const key = id(req.params.id);
+    await transaction(async (c) => {
+      const order = await row(c, "production_orders", key);
+      if (order.status !== "cancelada")
+        fail("Somente ordens canceladas podem ser apagadas.");
+      if (
+        (
+          await c.query("SELECT 1 FROM stock_movements WHERE order_id=$1", [
+            key,
+          ])
+        ).rowCount
+      )
+        fail(
+          "A ordem possui movimentações de estoque e deve permanecer no histórico.",
+        );
+      await c.query(
+        "DELETE FROM production_order_materials WHERE order_id=$1",
+        [key],
+      );
+      await c.query("DELETE FROM production_orders WHERE id=$1", [key]);
+    });
+    res.status(204).end();
+  });
   app.post("/api/orders/:id/:action", async (req, res) => {
     const key = id(req.params.id),
       action = z.enum(["start", "finish", "cancel"]).parse(req.params.action);

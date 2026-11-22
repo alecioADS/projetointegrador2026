@@ -29,3 +29,7 @@ Cadastro com código único (sem distinção de maiúsculas), marca e modelo. Te
 ## Produção com até quatro filamentos
 
 Testados limite de quatro linhas, bloqueio de repetição, filtros independentes de marca/material/cor, consumo real e custo por filamento, rollback de todas as cores em falta de saldo e preservação de ordens antigas. A jornada de navegador cobre seleção e conclusão de quatro cores, baixa independente de estoque, geração de produto uma única vez e liberação da impressora.
+
+## Exclusão de ordens canceladas
+
+Testados o bloqueio de exclusão de ordens planejadas/concluídas, a exclusão transacional de ordens canceladas sem movimentação, a resposta de registro inexistente após excluir e o fluxo de confirmação/voltar no navegador.

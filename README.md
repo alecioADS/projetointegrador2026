@@ -77,7 +77,7 @@ Abra **http://127.0.0.1:3001**. A API se recusa a iniciar se não conseguir cone
 - Ordem planejada pode ser cancelada. Após iniciar, deve ser concluída com o consumo real, inclusive falha total (zero peças aprovadas).
 - Não há reserva de material ao planejar ou iniciar. Saldo suficiente é exigido na conclusão.
 - O custo gravado é somente o material consumido, usando custo/kg vigente na conclusão; não representa preço de venda nem custo industrial completo.
-- Cadastro sem vínculos pode ser excluído. Chaves estrangeiras impedem excluir registros com histórico. Movimentações e ordens não têm exclusão na interface.
+- Cadastro sem vínculos pode ser excluído. Chaves estrangeiras impedem excluir registros com histórico. Movimentações não têm exclusão na interface. Ordens canceladas sem movimentação podem ser apagadas após confirmação; os vínculos dos filamentos são removidos na mesma transação. Ordens planejadas, em produção ou concluídas permanecem protegidas.
 - Sem login: edição acadêmica destinada ao uso local. Não publicar esta API na internet como sistema multiusuário.
 - A lista de eventos acadêmica tem 20 itens. Diagramas e documentos finais precisam refletir esta versão, não o escopo do produto original.
 

@@ -159,6 +159,7 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
     ).status,
     409,
   );
+  assert.equal((await request(`orders/${first.id}`, "DELETE")).status, 409);
   assert.equal((await request(`orders/${first.id}/start`, "POST")).status, 200);
   assert.equal((await request("printers")).body[0].availability, "ocupada");
   assert.equal((await request("orders", "POST", orderData)).status, 409);
@@ -212,6 +213,7 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   ]);
   assert.deepEqual(result.map((r) => r.status).sort(), [200, 409]);
   assert.equal(Number((await request("materials")).body[0].stock_g), 800);
+  assert.equal((await request(`orders/${first.id}`, "DELETE")).status, 409);
   assert.equal((await request("printers")).body[0].availability, "livre");
   assert.equal((await request("products")).body[0].stock_units, 8);
   assert.equal(
@@ -229,6 +231,12 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   assert.equal(
     (await request(`orders/${second.id}/cancel`, "POST")).status,
     200,
+  );
+  assert.equal((await request(`orders/${second.id}`, "DELETE")).status, 204);
+  assert.equal((await request(`orders/${second.id}`, "DELETE")).status, 404);
+  assert.equal(
+    (await request("orders")).body.some((o) => o.id === second.id),
+    false,
   );
   // Falha total ainda consome filamento e não cria produto.
   const failed = await create("orders", orderData);

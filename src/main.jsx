@@ -358,10 +358,10 @@ function App() {
                   Acessar produção →
                 </button>
               </div>
-              <div
+              <img
                 className="brand-symbol"
-                role="img"
-                aria-label="Símbolo AVS Labs 3D"
+                src="/brand/simbolo-avs.png"
+                alt="Símbolo AVS Labs 3D"
               />
             </section>
             <section className="panel">

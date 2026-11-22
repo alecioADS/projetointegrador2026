@@ -217,7 +217,9 @@ h2 {
   flex-shrink: 0;
   width: 170px;
   height: 190px;
-  background: url("/brand/avs-labs-3d.png") right center / auto 100% no-repeat;
+  display: block;
+  object-fit: contain;
+  object-position: center;
   margin: 0 25px;
 }
 .steps {

@@ -1,0 +1,51 @@
+%% Modelo relacional. Renderize cada bloco separadamente em um editor Mermaid.
+erDiagram
+ MATERIALS ||--o{ PRODUCTION_ORDERS : utiliza
+ PRINTERS ||--o{ PRODUCTION_ORDERS : executa
+ PRODUCTS ||--o{ PRODUCTION_ORDERS : produz
+ MATERIALS |o--o{ STOCK_MOVEMENTS : movimenta
+ PRODUCTS |o--o{ STOCK_MOVEMENTS : movimenta
+ PRODUCTION_ORDERS |o--o{ STOCK_MOVEMENTS : gera
+ MATERIALS {
+  int id PK
+  varchar name
+  varchar family
+  varchar color
+  numeric stock_g
+  numeric cost_per_kg
+ }
+ PRINTERS {
+  int id PK
+  varchar name
+  varchar model
+  varchar status
+ }
+ PRODUCTS {
+  int id PK
+  varchar name
+  varchar sku UK
+  int stock_units
+ }
+ PRODUCTION_ORDERS {
+  int id PK
+  int material_id FK
+  int printer_id FK
+  int product_id FK
+  int quantity
+  numeric planned_g
+  numeric actual_g
+  int approved_quantity
+  numeric material_cost
+  varchar status
+  timestamptz created_at
+  timestamptz finished_at
+ }
+ STOCK_MOVEMENTS {
+  int id PK
+  int material_id FK
+  int product_id FK
+  int order_id FK
+  numeric quantity
+  varchar reason
+  timestamptz created_at
+ }

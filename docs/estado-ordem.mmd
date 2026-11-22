@@ -1,0 +1,7 @@
+stateDiagram-v2
+ [*] --> Planejada: cadastrar ordem
+ Planejada --> EmProducao: iniciar [impressora disponível e livre]
+ Planejada --> Cancelada: confirmar cancelamento
+ EmProducao --> Concluida: concluir [saldo suficiente e quantidade válida]
+ Concluida --> [*]
+ Cancelada --> [*]

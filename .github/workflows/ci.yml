@@ -1,0 +1,46 @@
+name: Verificação do PI
+on: [push, pull_request]
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/avslabs_pi
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: avslabs_pi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run build
+      - run: npm test
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:setup
+      - name: Verificar interface
+        run: |
+          npm start > /tmp/avs-api.log 2>&1 &
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:3001/api/health
+          npm run test:e2e
+        env:
+          UI_BASE_URL: http://127.0.0.1:3001
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verificacao-interface
+          path: test-results/

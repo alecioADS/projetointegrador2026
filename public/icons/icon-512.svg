@@ -1,0 +1,13 @@
+<!-- Ícone PROVISÓRIO. Assinatura tipográfica "AVS", não é o símbolo oficial da marca. Substituir quando o arquivo de ícone oficial (quadrado, baseado em referencias/) estiver disponível. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E0FF" />
+      <stop offset="42%" stop-color="#2B5CFF" />
+      <stop offset="100%" stop-color="#F02BE0" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#05060A" />
+  <rect x="24" y="24" width="464" height="464" rx="64" fill="#11131C" stroke="url(#g)" stroke-width="6" />
+  <text x="256" y="300" text-anchor="middle" font-family="-apple-system, system-ui, Segoe UI, Roboto, sans-serif" font-size="190" font-weight="700" fill="url(#g)">AVS</text>
+</svg>

@@ -1,0 +1,35 @@
+{
+  "name": "avs-labs-3d-pi",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"node --watch server/index.js\" \"vite --host 127.0.0.1\"",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "db:setup": "node server/setup.js",
+    "test": "node --test tests/*.test.js",
+    "format": "prettier --write src server tests *.config.js package.json",
+    "format:check": "prettier --check src server tests *.config.js package.json",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "@playwright/test": "^1.56.0",
+    "concurrently": "^9.2.0",
+    "prettier": "^3.10.1",
+    "supertest": "^7.3.2",
+    "vite": "^7.2.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

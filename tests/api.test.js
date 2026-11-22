@@ -1,0 +1,260 @@
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import pg from "pg";
+import supertest from "supertest";
+import { PGlite } from "@electric-sql/pglite";
+// Banco temporário isolado: nunca limpa nem altera o banco da aplicação.
+const url = process.env.TEST_DATABASE_URL;
+let admin, pool, embedded, client, dbName;
+before(async () => {
+  const schema = await readFile(
+    new URL("../database/schema.sql", import.meta.url),
+    "utf8",
+  );
+  const { createApp } = await import("../server/app.js");
+  if (!url) {
+    embedded = new PGlite();
+    await embedded.exec(schema);
+    const adapt = (db) => ({
+      query: async (sql, values) => {
+        const r = await db.query(sql, values);
+        return { ...r, rowCount: r.affectedRows || r.rows.length };
+      },
+    });
+    const transaction = (fn) => embedded.transaction((tx) => fn(adapt(tx)));
+    client = supertest(createApp({ pool: adapt(embedded), transaction }));
+  } else {
+    admin = new pg.Pool({ connectionString: url });
+    dbName = "avs_pi_test_" + process.pid;
+    await admin.query(`CREATE DATABASE "${dbName}"`);
+    const target = new URL(url);
+    target.pathname = "/" + dbName;
+    pool = new pg.Pool({ connectionString: target.toString() });
+    await pool.query(schema);
+    const transaction = async (fn) => {
+      const c = await pool.connect();
+      try {
+        await c.query("BEGIN");
+        const result = await fn(c);
+        await c.query("COMMIT");
+        return result;
+      } catch (e) {
+        await c.query("ROLLBACK");
+        throw e;
+      } finally {
+        c.release();
+      }
+    };
+    client = supertest(createApp({ pool, transaction }));
+  }
+});
+after(async () => {
+  if (embedded) await embedded.close();
+  if (pool) await pool.end();
+  if (admin) {
+    if (dbName) await admin.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+    await admin.end();
+  }
+});
+async function request(path, method = "GET", body) {
+  let req = client[method.toLowerCase()]("/api/" + path);
+  if (body) req = req.send(body);
+  const r = await req;
+  return { status: r.status, body: r.status === 204 ? null : r.body };
+}
+async function create(path, data) {
+  const r = await request(path, "POST", data);
+  assert.equal(r.status, 201, JSON.stringify(r.body));
+  return r.body;
+}
+test("CRUD, validação, produção transacional, concorrência e preservação do histórico", async () => {
+  const material = await create("materials", {
+    name: "PLA teste",
+    family: "PLA",
+    color: "Azul",
+    cost_per_kg: 100,
+  });
+  const printer = await create("printers", {
+    name: "P1",
+    model: "Modelo teste",
+    status: "disponivel",
+  });
+  const product = await create("products", { name: "Suporte", sku: "SUP-01" });
+  assert.equal(
+    (
+      await request("materials", "POST", {
+        name: "",
+        family: "PLA",
+        color: "Azul",
+        cost_per_kg: 100,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (await request("products", "POST", { name: "Outro", sku: "SUP-01" }))
+      .status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("materials/" + material.id, "PUT", {
+        name: "PLA editado",
+        family: "PLA",
+        color: "Azul",
+        cost_per_kg: 100,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await request("stock-entry", "POST", {
+        material_id: material.id,
+        quantity: -5,
+        reason: "Inválida",
+      })
+    ).status,
+    400,
+  );
+  await create("stock-entry", {
+    material_id: material.id,
+    quantity: 1000,
+    reason: "Entrada inicial",
+  });
+  const orderData = {
+    product_id: product.id,
+    printer_id: printer.id,
+    material_id: material.id,
+    quantity: 10,
+    planned_g: 200,
+  };
+  const first = await create("orders", orderData),
+    second = await create("orders", orderData);
+  assert.equal(
+    (
+      await request(`orders/${first.id}/finish`, "POST", {
+        actual_g: 100,
+        approved_quantity: 10,
+      })
+    ).status,
+    409,
+  );
+  assert.equal((await request(`orders/${first.id}/start`, "POST")).status, 200);
+  assert.equal(
+    (await request(`orders/${second.id}/start`, "POST")).status,
+    409,
+  );
+  assert.equal(
+    (await request(`orders/${first.id}/cancel`, "POST")).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("printers/" + printer.id, "PUT", {
+        name: "P1",
+        model: "Modelo teste",
+        status: "manutencao",
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`orders/${first.id}/finish`, "POST", {
+        actual_g: 1100,
+        approved_quantity: 10,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`orders/${first.id}/finish`, "POST", {
+        actual_g: 200,
+        approved_quantity: 11,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(Number((await request("materials")).body[0].stock_g), 1000);
+  const result = await Promise.all([
+    request(`orders/${first.id}/finish`, "POST", {
+      actual_g: 200,
+      approved_quantity: 8,
+    }),
+    request(`orders/${first.id}/finish`, "POST", {
+      actual_g: 200,
+      approved_quantity: 8,
+    }),
+  ]);
+  assert.deepEqual(result.map((r) => r.status).sort(), [200, 409]);
+  assert.equal(Number((await request("materials")).body[0].stock_g), 800);
+  assert.equal((await request("products")).body[0].stock_units, 8);
+  assert.equal(
+    Number(
+      (await request("orders")).body.find((o) => o.id === first.id)
+        .material_cost,
+    ),
+    20,
+  );
+  assert.equal((await request("movements")).body.length, 3);
+  assert.equal(
+    (await request("materials/" + material.id, "DELETE")).status,
+    409,
+  );
+  assert.equal(
+    (await request(`orders/${second.id}/cancel`, "POST")).status,
+    200,
+  );
+  // Falha total ainda consome filamento e não cria produto.
+  const failed = await create("orders", orderData);
+  await request(`orders/${failed.id}/start`, "POST");
+  assert.equal(
+    (
+      await request(`orders/${failed.id}/finish`, "POST", {
+        actual_g: 50,
+        approved_quantity: 0,
+      })
+    ).status,
+    200,
+  );
+  assert.equal((await request("products")).body[0].stock_units, 8);
+  assert.equal(Number((await request("materials")).body[0].stock_g), 750);
+  // Duas impressoras podem disputar um mesmo material: saldo nunca negativo.
+  const printer2 = await create("printers", {
+    name: "P2",
+    model: "Modelo teste",
+    status: "disponivel",
+  });
+  const a = await create("orders", orderData),
+    b = await create("orders", { ...orderData, printer_id: printer2.id });
+  await request(`orders/${a.id}/start`, "POST");
+  await request(`orders/${b.id}/start`, "POST");
+  const contention = await Promise.all([
+    request(`orders/${a.id}/finish`, "POST", {
+      actual_g: 500,
+      approved_quantity: 1,
+    }),
+    request(`orders/${b.id}/finish`, "POST", {
+      actual_g: 500,
+      approved_quantity: 1,
+    }),
+  ]);
+  assert.deepEqual(contention.map((r) => r.status).sort(), [200, 409]);
+  assert.equal(Number((await request("materials")).body[0].stock_g), 250);
+  const spare = await create("products", { name: "Temporário", sku: "TEMP" });
+  assert.equal(
+    (
+      await request("products/" + spare.id, "PUT", {
+        name: "Temporário editado",
+        sku: "TEMP2",
+      })
+    ).status,
+    200,
+  );
+  assert.equal((await request("products/" + spare.id, "DELETE")).status, 204);
+  assert.equal((await request("products/" + spare.id, "DELETE")).status, 404);
+  assert.equal((await request("dashboard")).status, 200);
+});

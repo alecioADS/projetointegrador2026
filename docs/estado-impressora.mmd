@@ -1,0 +1,10 @@
+stateDiagram-v2
+ [*] --> Disponivel: cadastrar disponível
+ [*] --> Manutencao: cadastrar em manutenção
+ Disponivel --> Manutencao: alterar cadastro [sem ordem em produção]
+ Manutencao --> Disponivel: liberar manutenção
+ note right of Disponivel
+  Ocupação é derivada da ordem em produção.
+  Uma impressora disponível pode estar ocupada;
+  nesse caso, iniciar outra ordem é bloqueado.
+ end note

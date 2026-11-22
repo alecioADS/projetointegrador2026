@@ -182,6 +182,7 @@ function App() {
         {label}
         {type === "select" || type === "status" ? (
           <select
+            aria-label={label}
             required
             autoFocus={false}
             value={form[key]}

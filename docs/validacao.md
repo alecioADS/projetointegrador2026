@@ -8,13 +8,15 @@
 - Teste de integração da API com PGlite: aprovado. Executa o SQL real e verifica cadastro, edição, exclusão, SKU único, validação, entrada, impedimento de estoque negativo, estados de ordem, ocupação de impressora, custo de material, perda total e preservação do histórico.
 - Requisições simultâneas no teste embarcado verificam a proteção por estado e saldo, com transações serializadas pelo PGlite. Bloqueios entre conexões precisam do teste no servidor PostgreSQL.
 
-## Restrições desta sessão
+## Interface e execução com PostgreSQL real
 
-O servidor PostgreSQL nativo não pôde ser iniciado por restrição de memória compartilhada do ambiente. O Docker estava instalado, mas o daemon estava desligado. A tentativa de iniciar Chrome pelo Playwright foi encerrada pelo ambiente antes de abrir a página. Não foi possível concluir a inspeção visual local nem a jornada de navegador nesta execução.
+- Jornada Playwright no Chrome local: aprovada (cadastros → entrada → ordem → início → conclusão → consulta de saldo e histórico).
+- Capturas de desktop (1440 px) e celular (390 px): inspecionadas visualmente, sem transbordamento horizontal da página no celular. Navegação e tabelas podem rolar horizontalmente dentro de seus contêineres.
+- A execução local de interface usou banco PGlite temporário somente para a verificação; a aplicação entregue exige PostgreSQL comum.
+- GitHub Actions, execução inicial: instalação, formatação, build, integração com PostgreSQL 18 real e criação do esquema aprovados. O teste de interface identificou rótulos de seleção ambíguos, corrigidos com nomes acessíveis explícitos.
+- O workflow executa a jornada de navegador sobre o PostgreSQL real em cada push. Consulte a aba Actions para o resultado do commit atual e o artefato `verificacao-interface` com as capturas.
 
-## Verificação no GitHub
-
-O workflow usa PostgreSQL 18 real, executa o mesmo teste de integração com conexões independentes e roda a jornada de navegador no Chromium. As capturas de desktop e celular ficam no artefato `verificacao-interface`. Consulte a aba Actions para o resultado associado a cada commit.
+O servidor PostgreSQL nativo não foi iniciado nesta sessão por restrição de memória compartilhada; o Docker estava desligado. Isso foi contornado para verificação pelo teste nativo no ambiente isolado do GitHub, sem alterar serviços da máquina do aluno.
 
 ## Entregas acadêmicas
 

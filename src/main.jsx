@@ -203,6 +203,7 @@ function App() {
       sales: [],
       dashboard: {},
     });
+  const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
@@ -210,6 +211,40 @@ function App() {
     [form, setForm] = useState({}),
     [busy, setBusy] = useState(false),
     [search, setSearch] = useState("");
+  async function downloadReports() {
+    setExporting(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/reports/export");
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(
+          result.error || "Não foi possível exportar os relatórios.",
+        );
+      }
+      const blob = await response.blob();
+      const filename =
+        response.headers
+          .get("Content-Disposition")
+          ?.match(/filename="?([^";]+)"?/)?.[1] || "avs-labs-3d-relatorios.zip";
+      const url = URL.createObjectURL(blob),
+        link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setNotice(
+        "Relatórios exportados: o ZIP contém um CSV por seção do sistema.",
+      );
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setExporting(false);
+    }
+  }
   async function refresh() {
     setLoading(true);
     try {
@@ -457,6 +492,9 @@ function App() {
             </p>
           </div>
           <div className="actions">
+            <button disabled={exporting} onClick={downloadReports}>
+              {exporting ? "Exportando…" : "Exportar relatórios (CSV)"}
+            </button>
             {page === "sales" && (
               <button className="primary" onClick={() => open("sales")}>
                 + Registrar venda

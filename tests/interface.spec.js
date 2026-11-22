@@ -469,3 +469,32 @@ test("venda por marketplace e varejo mostra bruto e baixa estoque", async ({
   ).json();
   expect(products.find((p) => p.id === product.id).stock_units).toBe(3);
 });
+
+test("botão baixa relatório CSV por seção em ZIP", async ({
+  page,
+}, testInfo) => {
+  const base = process.env.UI_BASE_URL || "http://127.0.0.1:5173";
+  await page.goto(base);
+  const downloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Exportar relatórios (CSV)", exact: true })
+    .click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(
+    /^avs-labs-3d-relatorios-.*\.zip$/,
+  );
+  expect(await download.failure()).toBeNull();
+  const path = testInfo.outputPath("relatorios.zip");
+  await download.saveAs(path);
+  const { readFile } = await import("node:fs/promises");
+  const { unzipSync } = await import("fflate");
+  const files = unzipSync(await readFile(path));
+  expect(Object.keys(files).filter((f) => f.endsWith(".csv"))).toHaveLength(8);
+  expect(Buffer.from(files["08-vendas.csv"]).toString("utf8")).toContain(
+    "Peça para venda",
+  );
+  expect(
+    Buffer.from(files["06-filamentos-da-producao.csv"]).toString("utf8"),
+  ).toContain("Marca AMS");
+  await expect(page.getByRole("status")).toContainText("Relatórios exportados");
+});

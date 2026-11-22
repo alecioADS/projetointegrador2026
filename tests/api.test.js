@@ -668,3 +668,66 @@ test("vendas baixam produtos, calculam bruto e evitam saldo negativo e duplicaç
   );
   assert.equal((await request("products/" + product.id, "DELETE")).status, 409);
 });
+
+test("relatório geral exporta ZIP com CSVs completos, acentos, decimais e textos seguros", async () => {
+  const { unzipSync } = await import("fflate");
+  await create("materials", {
+    brand: 'Marca "Teste";\nÁgua',
+    family: "PLA",
+    color: "Azul",
+    cost_per_kg: 12.34,
+    initial_stock_g: 2.75,
+  });
+  await create("products", { name: "=2+3", sku: "@COMANDO" });
+  const result = await client
+    .get("/api/reports/export")
+    .buffer(true)
+    .parse((response, done) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("end", () => done(null, Buffer.concat(chunks)));
+      response.on("error", done);
+    });
+  assert.equal(result.status, 200);
+  assert.match(result.headers["content-type"], /application\/zip/);
+  assert.match(
+    result.headers["content-disposition"],
+    /avs-labs-3d-relatorios-.*\.zip/,
+  );
+  assert.equal(result.headers["cache-control"], "no-store");
+  const files = unzipSync(result.body);
+  assert.equal(Object.keys(files).filter((f) => f.endsWith(".csv")).length, 8);
+  for (const filename of [
+    "01-visao-geral.csv",
+    "02-filamentos.csv",
+    "03-impressoras.csv",
+    "04-produtos.csv",
+    "05-producao.csv",
+    "06-filamentos-da-producao.csv",
+    "07-movimentacoes.csv",
+    "08-vendas.csv",
+  ]) {
+    assert.ok(files[filename], filename);
+    const text = Buffer.from(files[filename]).toString("utf8");
+    assert.ok(text.startsWith("\uFEFF"));
+    assert.ok(text.includes(";"));
+    assert.ok(text.endsWith("\r\n"));
+  }
+  const materials = Buffer.from(files["02-filamentos.csv"]).toString("utf8");
+  assert.ok(materials.includes('"Marca ""Teste"";\nÁgua"'));
+  assert.ok(materials.includes('"2,75"'));
+  assert.ok(materials.includes('"12,34"'));
+  const products = Buffer.from(files["04-produtos.csv"]).toString("utf8");
+  assert.ok(products.includes('"\'=2+3"'));
+  assert.ok(products.includes('"\'@COMANDO"'));
+  const movements = Buffer.from(files["07-movimentacoes.csv"]).toString("utf8");
+  assert.ok(movements.includes('"-5,00"'));
+  assert.ok(!movements.includes('"\'-5,00"'));
+  const sales = Buffer.from(files["08-vendas.csv"]).toString("utf8");
+  assert.ok(sales.includes('"37,05"'));
+  const consumptions = Buffer.from(
+    files["06-filamentos-da-producao.csv"],
+  ).toString("utf8");
+  for (const color of ["Azul", "Vermelho", "Verde", "Amarelo"])
+    assert.ok(consumptions.includes('"' + color + '"'));
+});

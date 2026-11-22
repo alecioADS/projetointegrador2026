@@ -1,4 +1,5 @@
 import express from "express";
+import { exportReports } from "./reports.js";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -48,6 +49,14 @@ export function createApp({
     if (!rows[0]) fail("Registro não encontrado.", 404);
     return rows[0];
   }
+  app.get("/api/reports/export", async (req, res) => {
+    const archive = await exportReports(transaction);
+    res.set("Cache-Control", "no-store");
+    res.attachment(
+      `avs-labs-3d-relatorios-${new Date().toISOString().slice(0, 10)}.zip`,
+    );
+    res.type("application/zip").send(archive);
+  });
   app.get("/api/health", async (req, res) => {
     await pool.query("SELECT 1");
     res.json({ ok: true });

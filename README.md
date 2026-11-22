@@ -74,6 +74,12 @@ Na aba **Vendas**, selecione o produto disponível, informe quantidade, canal (M
 
 Não há contas a receber, taxas, despesas, comissões, lucro ou emissão fiscal. O valor é faturamento bruto registrado, não resultado líquido nem confirmação de recebimento. Vendas registradas permanecem no histórico. A mesma solicitação reenviada não duplica venda ou estoque. Estoque insuficiente impede o registro completo.
 
+## Exportar relatórios
+
+O botão **Exportar relatórios (CSV)** está disponível em todas as telas. Ele baixa um ZIP com oito CSVs: visão geral, filamentos, impressoras, produtos, produção, filamentos da produção (consumos por cor), movimentações e vendas. CSV não possui abas; cada seção fica em um arquivo próprio. O arquivo LEIA-ME explica o formato e os vínculos pelos IDs.
+
+A exportação inclui todo o histórico, sem aplicar a busca da tela, em uma leitura consistente do banco. Os CSVs usam UTF-8 com BOM, ponto e vírgula como separador e vírgula decimal, para leitura em Excel e LibreOffice configurados em português. Datas são exportadas em UTC (ISO 8601). Valores de faturamento são brutos. Textos que poderiam ser interpretados como fórmulas são neutralizados.
+
 ## Regras e limites
 
 - Saldo de material em gramas; produto em unidades inteiras. Entradas só em materiais; o produto entra pela produção.

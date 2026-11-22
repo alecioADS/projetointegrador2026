@@ -45,3 +45,7 @@ Testados aumentos, reduções e saldo zero no formulário de edição. Cada dife
 ## Vendas e faturamento bruto
 
 Testados cálculo monetário no PostgreSQL, baixa de produtos, bloqueio de saldo insuficiente, canais válidos, precisão monetária, vendas concorrentes, reenvio idempotente e preservação do vínculo no histórico. Jornada de navegador cobre Marketplace e Varejo, totais brutos por canal, saldo atualizado e impedimento de venda acima do disponível. Inspeção de layout em desktop e viewport móvel.
+
+## Exportação geral em CSV
+
+Testados download do ZIP pelo navegador, oito CSVs por seção, cabeçalhos, acentos, campos com aspas/ponto e vírgula/quebra de linha, vírgula decimal e preservação de quantidades negativas como números. Textos com prefixos de fórmula são neutralizados. O pacote inclui consumos por cor, vendas e referências das movimentações, lidos sob snapshot consistente.

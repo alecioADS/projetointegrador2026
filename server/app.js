@@ -110,11 +110,40 @@ export function createApp({
       res.status(201).json(record);
     });
     app.put(`/api/${table}/:id`, async (req, res) => {
-      const key = id(req.params.id),
-        data = schema.parse(req.body);
+      const key = id(req.params.id);
+      const amount = z.number().min(0).max(10000000).multipleOf(0.01);
+      const parsed = (
+        table === "materials"
+          ? schema
+              .extend({
+                stock_g: amount.optional(),
+                expected_stock_g: amount.optional(),
+              })
+              .refine(
+                (data) =>
+                  data.stock_g === undefined ||
+                  data.expected_stock_g !== undefined,
+                {
+                  message: "Informe o saldo anterior para confirmar o ajuste.",
+                },
+              )
+          : schema
+      ).parse(req.body);
+      const { expected_stock_g, ...data } = parsed;
       res.json(
         await transaction(async (c) => {
-          await row(c, table, key);
+          const previous = await row(c, table, key);
+          let difference = 0;
+          if (table === "materials" && data.stock_g !== undefined) {
+            if (Number(previous.stock_g) !== expected_stock_g)
+              fail(
+                "O saldo mudou desde que você abriu a edição. Reabra o cadastro antes de ajustar.",
+              );
+            difference =
+              (Math.round(data.stock_g * 100) -
+                Math.round(Number(previous.stock_g) * 100)) /
+              100;
+          }
           if (
             table === "printers" &&
             data.status === "manutencao" &&
@@ -129,12 +158,18 @@ export function createApp({
               "Conclua a produção antes de colocar a impressora em manutenção.",
             );
           const cols = Object.keys(data);
-          return (
+          const updated = (
             await c.query(
               `UPDATE ${table} SET ${cols.map((k, i) => k + "=$" + (i + 1)).join(",")} WHERE id=$${cols.length + 1} RETURNING *`,
               [...Object.values(data), key],
             )
           ).rows[0];
+          if (difference !== 0)
+            await c.query(
+              "INSERT INTO stock_movements(material_id,quantity,reason) VALUES ($1,$2,'Ajuste de saldo na edição do filamento')",
+              [key, difference],
+            );
+          return updated;
         }),
       );
     });

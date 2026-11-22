@@ -37,3 +37,7 @@ Testados o bloqueio de exclusão de ordens planejadas/concluídas, a exclusão t
 ## Saldo inicial no cadastro de filamentos
 
 Campo em gramas no cadastro, com validação de quantidade não negativa e precisão de centésimos. Cadastro e movimentação inicial confirmados em uma única transação. Testados saldo positivo/fracionário, saldo zero sem movimento, valores inválidos, edição sem alteração de estoque e jornada no navegador com saldo inicial mais reposição posterior.
+
+## Edição do saldo do filamento
+
+Testados aumentos, reduções e saldo zero no formulário de edição. Cada diferença gera movimentação de ajuste sem alterar o histórico anterior; salvar sem mudar o saldo não gera movimento. A versão do saldo exibido é comparada com o banco sob bloqueio para impedir sobrescrita de uma reposição/produção ocorrida durante a edição.

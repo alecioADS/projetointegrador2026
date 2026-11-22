@@ -70,7 +70,7 @@ Abra **http://127.0.0.1:3001**. A API se recusa a iniciar se não conseguir cone
 ## Regras e limites
 
 - Saldo de material em gramas; produto em unidades inteiras. Entradas só em materiais; o produto entra pela produção.
-- O cadastro aceita saldo inicial em gramas (zero por padrão). Se maior que zero, gera uma entrada de estoque na mesma transação do cadastro. A edição de dados descritivos preserva o saldo; reposições são feitas em Entrada de estoque.
+- O cadastro aceita saldo inicial em gramas (zero por padrão). Se maior que zero, gera uma entrada de estoque na mesma transação do cadastro. A edição permite ajustar o saldo total, registrando a diferença no histórico e verificando se o saldo mudou durante a edição. Reposições também podem ser feitas em Entrada de estoque.
 - Conclusão bloqueia a ordem e os filamentos em ordem de ID para impedir consumo duplicado, saldo negativo e deadlocks. Cada cor recebe consumo real e custo próprios; todos os estoques e o produto são atualizados em uma única transação. Se qualquer cor tiver saldo insuficiente, nenhuma alteração é confirmada.
 - Uma ordem aceita de um a quatro filamentos distintos. Na conclusão, é permitido informar zero em cores não utilizadas, desde que o consumo total seja maior que zero.
 - Apenas uma ordem em produção por impressora. Impressora em manutenção não inicia produção; impressora ocupada não entra em manutenção.

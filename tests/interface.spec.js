@@ -316,3 +316,46 @@ test("apaga ordem cancelada após confirmação", async ({ page }) => {
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator("tbody tr")).toHaveCount(0);
 });
+
+test("saldo editável registra ajustes no estoque", async ({ page }) => {
+  const base = process.env.UI_BASE_URL || "http://127.0.0.1:5173";
+  const response = await page.request.post(base + "/api/materials", {
+    data: {
+      brand: "Marca ajuste",
+      family: "PLA",
+      color: "Cinza",
+      cost_per_kg: 100,
+      initial_stock_g: 100,
+    },
+  });
+  expect(response.status()).toBe(201);
+  const material = await response.json();
+  await page.goto(base);
+  await page.getByRole("button", { name: "Materiais", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Buscar registros" })
+    .fill("Marca ajuste");
+  await page.getByRole("button", { name: "Editar", exact: true }).click();
+  await expect(page.getByLabel("Saldo atual (g)")).toHaveValue("100.00");
+  await page.getByLabel("Saldo atual (g)").fill("250");
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("cell", { name: "250 g", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Editar", exact: true }).click();
+  await page.getByLabel("Saldo atual (g)").fill("50");
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("cell", { name: "50 g", exact: true }),
+  ).toBeVisible();
+  const movements = await (
+    await page.request.get(base + "/api/movements")
+  ).json();
+  expect(
+    movements
+      .filter((m) => m.material_id === material.id)
+      .map((m) => Number(m.quantity)),
+  ).toEqual([-200, 150, 100]);
+});

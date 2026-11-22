@@ -491,3 +491,48 @@ test("saldo inicial cria entrada auditável e edição preserva estoque", async 
     false,
   );
 });
+
+test("edição ajusta saldo para cima, para baixo e zero sem apagar histórico nem sobrescrever saldo desatualizado", async () => {
+  const data = {
+    brand: "Ajuste de saldo",
+    family: "PLA",
+    color: "Preto",
+    cost_per_kg: 100,
+  };
+  const material = await create("materials", { ...data, initial_stock_g: 100 });
+  const edit = (stock_g, expected_stock_g) =>
+    request("materials/" + material.id, "PUT", {
+      ...data,
+      stock_g,
+      expected_stock_g,
+    });
+  assert.equal((await edit(150.25, 100)).status, 200);
+  assert.equal((await edit(20, 150.25)).status, 200);
+  assert.equal((await edit(20, 20)).status, 200);
+  assert.equal((await edit(0, 20)).status, 200);
+  assert.equal((await edit(-1, 0)).status, 400);
+  await create("stock-entry", {
+    material_id: material.id,
+    quantity: 30,
+    reason: "Reposição durante edição",
+  });
+  assert.equal((await edit(10, 0)).status, 409);
+  assert.equal(
+    Number(
+      (await request("materials")).body.find((m) => m.id === material.id)
+        .stock_g,
+    ),
+    30,
+  );
+  const moves = (await request("movements")).body
+    .filter((m) => m.material_id === material.id)
+    .reverse();
+  assert.deepEqual(
+    moves.map((m) => Number(m.quantity)),
+    [100, 50.25, -130.25, -20, 30],
+  );
+  assert.equal(
+    moves.reduce((total, m) => total + Number(m.quantity), 0),
+    30,
+  );
+});

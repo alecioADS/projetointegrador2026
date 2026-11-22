@@ -58,6 +58,8 @@ const initial = {
 const numeric = new Set([
   "cost_per_kg",
   "initial_stock_g",
+  "stock_g",
+  "expected_stock_g",
   "material_id",
   "printer_id",
   "product_id",
@@ -164,7 +166,12 @@ function App() {
     setModal({ kind, row });
     setForm(
       row && fields[kind]
-        ? Object.fromEntries(fields[kind].map(([key]) => [key, row[key]]))
+        ? {
+            ...Object.fromEntries(fields[kind].map(([key]) => [key, row[key]])),
+            ...(kind === "materials"
+              ? { stock_g: row.stock_g, expected_stock_g: Number(row.stock_g) }
+              : {}),
+          }
         : { ...initial[kind] },
     );
   }
@@ -245,7 +252,8 @@ function App() {
               type === "number"
                 ? key === "cost_per_kg" ||
                   key === "approved_quantity" ||
-                  key === "initial_stock_g"
+                  key === "initial_stock_g" ||
+                  key === "stock_g"
                   ? 0
                   : ["quantity"].includes(key) && modal?.kind === "order"
                     ? 1
@@ -690,11 +698,14 @@ function App() {
                       </p>
                     </>
                   ) : (
-                    <p className="muted">
-                      Saldo atual: {number(modal.row.stock_g)} g. Para
-                      acrescentar filamento, utilize “Entrada de estoque” na
-                      tela de materiais.
-                    </p>
+                    <>
+                      {input("stock_g", "Saldo atual (g)", "number")}
+                      <p className="muted">
+                        Informe o saldo total que você possui agora, em gramas.
+                        A diferença será registrada no histórico como ajuste de
+                        estoque.
+                      </p>
+                    </>
                   ))}
                 {modal.kind === "entry" && (
                   <>

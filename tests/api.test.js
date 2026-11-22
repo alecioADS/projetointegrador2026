@@ -428,3 +428,66 @@ test("produção de quatro cores valida limite, repetição, consumo por cor e r
     409,
   );
 });
+
+test("saldo inicial cria entrada auditável e edição preserva estoque", async () => {
+  const data = {
+    brand: "Saldo inicial",
+    family: "PLA",
+    color: "Cinza",
+    cost_per_kg: 100,
+  };
+  const before = (await request("movements")).body.length;
+  const material = await create("materials", {
+    ...data,
+    initial_stock_g: 1000.25,
+  });
+  assert.equal(Number(material.stock_g), 1000.25);
+  const entries = (await request("movements")).body.filter(
+    (m) => m.material_id === material.id,
+  );
+  assert.equal(entries.length, 1);
+  assert.equal(Number(entries[0].quantity), 1000.25);
+  assert.equal(entries[0].reason, "Saldo inicial do filamento");
+  assert.equal(
+    (
+      await request("materials/" + material.id, "PUT", {
+        ...data,
+        color: "Prata",
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    Number(
+      (await request("materials")).body.find((m) => m.id === material.id)
+        .stock_g,
+    ),
+    1000.25,
+  );
+  assert.equal((await request("movements")).body.length, before + 1);
+  assert.equal(
+    (await request("materials", "POST", { ...data, initial_stock_g: -1 }))
+      .status,
+    400,
+  );
+  assert.equal(
+    (await request("materials", "POST", { ...data, initial_stock_g: 0.001 }))
+      .status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("materials/" + material.id, "PUT", {
+        ...data,
+        initial_stock_g: 50,
+      })
+    ).status,
+    400,
+  );
+  const empty = await create("materials", { ...data, initial_stock_g: 0 });
+  assert.equal(Number(empty.stock_g), 0);
+  assert.equal(
+    (await request("movements")).body.some((m) => m.material_id === empty.id),
+    false,
+  );
+});

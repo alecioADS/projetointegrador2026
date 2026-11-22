@@ -38,7 +38,13 @@ const fields = {
   ],
 };
 const initial = {
-  materials: { brand: "", family: "PLA", color: "", cost_per_kg: "" },
+  materials: {
+    brand: "",
+    family: "PLA",
+    color: "",
+    cost_per_kg: "",
+    initial_stock_g: "0",
+  },
   printers: { code: "", brand: "", model: "", status: "disponivel" },
   products: { name: "", sku: "" },
   entry: { material_id: "", quantity: "", reason: "" },
@@ -51,6 +57,7 @@ const initial = {
 };
 const numeric = new Set([
   "cost_per_kg",
+  "initial_stock_g",
   "material_id",
   "printer_id",
   "product_id",
@@ -236,7 +243,9 @@ function App() {
             type={type}
             min={
               type === "number"
-                ? key === "cost_per_kg" || key === "approved_quantity"
+                ? key === "cost_per_kg" ||
+                  key === "approved_quantity" ||
+                  key === "initial_stock_g"
                   ? 0
                   : ["quantity"].includes(key) && modal?.kind === "order"
                     ? 1
@@ -670,6 +679,23 @@ function App() {
             ) : (
               <form onSubmit={save}>
                 {fields[modal.kind]?.map((f) => input(...f))}
+                {modal.kind === "materials" &&
+                  (!modal.row ? (
+                    <>
+                      {input("initial_stock_g", "Saldo inicial (g)", "number")}
+                      <p className="muted">
+                        Quantidade de filamento que você já possui. Ex.: 1000 g
+                        para um rolo de 1 kg. O saldo inicial será registrado no
+                        histórico de estoque.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="muted">
+                      Saldo atual: {number(modal.row.stock_g)} g. Para
+                      acrescentar filamento, utilize “Entrada de estoque” na
+                      tela de materiais.
+                    </p>
+                  ))}
                 {modal.kind === "entry" && (
                   <>
                     {input(

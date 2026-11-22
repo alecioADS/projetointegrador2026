@@ -71,13 +71,43 @@ export function createApp({
       );
     });
     app.post(`/api/${table}`, async (req, res) => {
-      const data = schema.parse(req.body),
-        cols = Object.keys(data);
-      const { rows } = await pool.query(
-        `INSERT INTO ${table} (${cols.join(",")}) VALUES (${cols.map((_, i) => "$" + (i + 1)).join(",")}) RETURNING *`,
-        Object.values(data),
-      );
-      res.status(201).json(rows[0]);
+      const parsed = (
+        table === "materials"
+          ? schema.extend({
+              initial_stock_g: z
+                .number()
+                .min(0)
+                .max(10000000)
+                .multipleOf(0.01)
+                .default(0),
+            })
+          : schema
+      ).parse(req.body);
+      const { initial_stock_g = 0, ...data } = parsed;
+      const cols = Object.keys(data);
+      const record = await transaction(async (c) => {
+        const created = (
+          await c.query(
+            `INSERT INTO ${table} (${cols.join(",")}) VALUES (${cols.map((_, i) => "$" + (i + 1)).join(",")}) RETURNING *`,
+            Object.values(data),
+          )
+        ).rows[0];
+        if (table === "materials" && initial_stock_g > 0) {
+          await c.query("UPDATE materials SET stock_g=$1 WHERE id=$2", [
+            initial_stock_g,
+            created.id,
+          ]);
+          await c.query(
+            "INSERT INTO stock_movements(material_id,quantity,reason) VALUES ($1,$2,'Saldo inicial do filamento')",
+            [created.id, initial_stock_g],
+          );
+          return (
+            await c.query("SELECT * FROM materials WHERE id=$1", [created.id])
+          ).rows[0];
+        }
+        return created;
+      });
+      res.status(201).json(record);
     });
     app.put(`/api/${table}/:id`, async (req, res) => {
       const key = id(req.params.id),

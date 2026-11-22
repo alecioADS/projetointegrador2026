@@ -15,6 +15,7 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await page.getByLabel("Marca", { exact: true }).fill("Marca teste");
   await page.getByLabel("Cor", { exact: true }).fill("Azul");
   await page.getByLabel("Custo por kg").fill("100");
+  await page.getByLabel("Saldo inicial (g)").fill("500");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "+ Novo cadastro" }).click();
@@ -28,7 +29,7 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await page
     .getByLabel("Material", { exact: true })
     .selectOption({ label: "Marca teste · PLA · Azul" });
-  await page.getByLabel("Quantidade (g)").fill("1000");
+  await page.getByLabel("Quantidade (g)").fill("500");
   await page.getByLabel("Motivo da entrada").fill("Compra inicial");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -144,7 +145,7 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await page
     .getByRole("button", { name: "Movimentações", exact: true })
     .click();
-  await expect(page.locator("tbody tr")).toHaveCount(3);
+  await expect(page.locator("tbody tr")).toHaveCount(4);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Visão geral", exact: true }).click();
   await page.screenshot({

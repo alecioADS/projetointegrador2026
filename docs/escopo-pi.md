@@ -8,7 +8,7 @@ Todos são eventos externos, estimulados por uma ação do operador. A resposta 
 
 | ID | Evento | Estímulo | Ação e resposta interna | Resposta externa |
 |---|---|---|---|---|
-| 01 | Cadastrar material | Envio do formulário | Gravar marca, material, cor e custo/kg, saldo zero | Material na lista |
+| 01 | Cadastrar material | Envio do formulário | Gravar marca, material, cor, custo/kg e saldo inicial, gerando entrada no histórico se maior que zero | Material na lista |
 | 02 | Consultar materiais | Abrir Materiais ou buscar | Ler e filtrar cadastros | Lista e saldo em gramas |
 | 03 | Alterar material | Salvar edição | Atualizar dados descritivos e custo, preservar saldo | Cadastro atualizado |
 | 04 | Excluir material | Confirmar exclusão | Excluir somente sem vínculos | Lista atualizada ou impedimento |

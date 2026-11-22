@@ -33,3 +33,7 @@ Testados limite de quatro linhas, bloqueio de repetição, filtros independentes
 ## Exclusão de ordens canceladas
 
 Testados o bloqueio de exclusão de ordens planejadas/concluídas, a exclusão transacional de ordens canceladas sem movimentação, a resposta de registro inexistente após excluir e o fluxo de confirmação/voltar no navegador.
+
+## Saldo inicial no cadastro de filamentos
+
+Campo em gramas no cadastro, com validação de quantidade não negativa e precisão de centésimos. Cadastro e movimentação inicial confirmados em uma única transação. Testados saldo positivo/fracionário, saldo zero sem movimento, valores inválidos, edição sem alteração de estoque e jornada no navegador com saldo inicial mais reposição posterior.

@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS materials (
 );
 CREATE TABLE IF NOT EXISTS printers (
  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
- name varchar(120) NOT NULL CHECK (length(trim(name)) > 0),
+ code varchar(120) NOT NULL CHECK (length(trim(code)) > 0),
+ brand varchar(120) NOT NULL CHECK (length(trim(brand)) > 0),
  model varchar(120) NOT NULL,
  status varchar(20) NOT NULL DEFAULT 'disponivel' CHECK (status IN ('disponivel','manutencao'))
 );
@@ -41,4 +42,15 @@ CREATE TABLE IF NOT EXISTS stock_movements (
  CHECK ((material_id IS NOT NULL)::integer + (product_id IS NOT NULL)::integer = 1)
 );
 CREATE INDEX IF NOT EXISTS stock_movements_created ON stock_movements(created_at DESC);
+-- Atualização compatível com a primeira versão, preservando IDs e vínculos.
+DO $$ BEGIN
+ IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='printers' AND column_name='name') THEN
+  ALTER TABLE printers RENAME COLUMN name TO code;
+ END IF;
+END $$;
+ALTER TABLE printers ADD COLUMN IF NOT EXISTS brand varchar(120) NOT NULL DEFAULT 'Não informada';
+-- Nomes antigos repetidos recebem o ID para manter a identificação única.
+UPDATE printers SET code=left(code,100)||' #'||id WHERE lower(trim(code)) IN
+ (SELECT lower(trim(code)) FROM printers GROUP BY lower(trim(code)) HAVING count(*)>1);
+CREATE UNIQUE INDEX IF NOT EXISTS printers_code_unique ON printers(lower(trim(code)));
 COMMIT;

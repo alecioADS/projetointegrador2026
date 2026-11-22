@@ -6,7 +6,9 @@ Versão acadêmica independente do [AvsLabs3D](https://github.com/alecioADS/AvsL
 
 Uma empresa e um operador local. CRUD de materiais, impressoras e produtos; entrada e histórico de estoque; planejamento, início, conclusão e cancelamento de ordens; painel de indicadores. Sem Supabase, contas, serviços de nuvem ou autenticação. Sem compras, vendas, financeiro, variantes, montagem ou sincronização offline. Uma ordem usa um material, uma impressora e um produto.
 
-**Stack:** React + Vite, API Node.js/Express e PostgreSQL. O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com cinco tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
+**Stack:** React + Vite, API Node.js/Express e PostgreSQL. Impressoras têm código único, marca e modelo. Ao planejar uma produção, selecione o modelo e uma unidade livre; unidades ocupadas ou em manutenção ficam indisponíveis. A conclusão da ordem libera a unidade automaticamente.
+
+O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com cinco tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
 
 ## Abrir no dia da apresentação
 
@@ -44,7 +46,7 @@ npm run db:setup
 npm run dev
 ```
 
-Abra **http://127.0.0.1:5173**. Banco inicialmente vazio. `db:setup` cria as tabelas sem apagar registros; não é um mecanismo de atualização de esquemas antigos.
+Abra **http://127.0.0.1:5173**. Banco inicialmente vazio. `db:setup` cria as tabelas sem apagar registros e aplica a atualização de impressoras (código e marca). Nos cadastros anteriores, o antigo nome é preservado como código; a marca fica “Não informada” até ser corrigida na edição. Códigos antigos repetidos recebem o ID como sufixo.
 
 Para a apresentação, também é possível servir tudo em uma porta:
 

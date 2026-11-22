@@ -27,10 +27,22 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Impressoras", exact: true }).click();
   await page.getByRole("button", { name: "+ Novo cadastro" }).click();
-  await page.getByLabel("Nome", { exact: true }).fill("Impressora 01");
-  await page.getByLabel("Modelo", { exact: true }).fill("Bambu A1");
+  await page.getByLabel("Código (ex.: Impressora 01)").fill("Impressora 01");
+  await page.getByLabel("Marca", { exact: true }).fill("Bambu Lab");
+  await page.getByLabel("Modelo", { exact: true }).fill("A1");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  for (const [code, brand, model] of [
+    ["Impressora 02", "Bambu Lab", "A1"],
+    ["Impressora 03", "Creality", "Ender 3"],
+  ]) {
+    await page.getByRole("button", { name: "+ Novo cadastro" }).click();
+    await page.getByLabel("Código (ex.: Impressora 01)").fill(code);
+    await page.getByLabel("Marca", { exact: true }).fill(brand);
+    await page.getByLabel("Modelo", { exact: true }).fill(model);
+    await page.getByRole("button", { name: "Salvar", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
   await page.getByRole("button", { name: "Produtos", exact: true }).click();
   await page.getByRole("button", { name: "+ Novo cadastro" }).click();
   await page.getByLabel("Nome", { exact: true }).fill("Suporte");
@@ -43,6 +55,9 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
     .getByLabel("Produto", { exact: true })
     .selectOption({ label: "Suporte" });
   await page
+    .getByLabel("Modelo da impressora", { exact: true })
+    .selectOption({ label: "Bambu Lab · A1" });
+  await page
     .getByLabel("Impressora", { exact: true })
     .selectOption({ label: "Impressora 01" });
   await page
@@ -53,12 +68,41 @@ test("cadastro → entrada → produção → histórico e layout móvel", async
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Iniciar", exact: true }).click();
+  await page.getByRole("button", { name: "+ Nova ordem" }).click();
+  await page
+    .getByLabel("Modelo da impressora", { exact: true })
+    .selectOption({ label: "Bambu Lab · A1" });
+  await expect(
+    page.getByRole("option", { name: "Impressora 01 — Ocupada", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("option", { name: "Impressora 02", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByLabel("Impressora", { exact: true })
+    .selectOption({ label: "Impressora 02" });
+  await page
+    .getByLabel("Modelo da impressora", { exact: true })
+    .selectOption({ label: "Creality · Ender 3" });
+  await expect(page.getByLabel("Impressora", { exact: true })).toHaveValue("");
+  await expect(
+    page.getByRole("option", { name: "Impressora 02", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Fechar", exact: true }).click();
   await page.getByRole("button", { name: "Concluir", exact: true }).click();
   await page.getByLabel("Consumo real").fill("200");
   await page.getByLabel("Peças aprovadas").fill("8");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText("Concluída", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "+ Nova ordem" }).click();
+  await page
+    .getByLabel("Modelo da impressora", { exact: true })
+    .selectOption({ label: "Bambu Lab · A1" });
+  await expect(
+    page.getByRole("option", { name: "Impressora 01", exact: true }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Fechar", exact: true }).click();
   await page.screenshot({
     path: testInfo.outputPath("desktop.png"),
     fullPage: true,

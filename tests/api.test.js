@@ -76,10 +76,23 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
     cost_per_kg: 100,
   });
   const printer = await create("printers", {
-    name: "P1",
+    code: "Impressora 01",
+    brand: "Bambu Lab",
     model: "Modelo teste",
     status: "disponivel",
   });
+  assert.equal((await request("printers")).body[0].availability, "livre");
+  assert.equal(
+    (
+      await request("printers", "POST", {
+        code: "impressora 01",
+        brand: "Outra",
+        model: "Outro",
+        status: "disponivel",
+      })
+    ).status,
+    409,
+  );
   const product = await create("products", { name: "Suporte", sku: "SUP-01" });
   assert.equal(
     (
@@ -142,6 +155,8 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
     409,
   );
   assert.equal((await request(`orders/${first.id}/start`, "POST")).status, 200);
+  assert.equal((await request("printers")).body[0].availability, "ocupada");
+  assert.equal((await request("orders", "POST", orderData)).status, 409);
   assert.equal(
     (await request(`orders/${second.id}/start`, "POST")).status,
     409,
@@ -153,7 +168,8 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   assert.equal(
     (
       await request("printers/" + printer.id, "PUT", {
-        name: "P1",
+        code: "Impressora 01",
+        brand: "Bambu Lab",
         model: "Modelo teste",
         status: "manutencao",
       })
@@ -191,6 +207,7 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   ]);
   assert.deepEqual(result.map((r) => r.status).sort(), [200, 409]);
   assert.equal(Number((await request("materials")).body[0].stock_g), 800);
+  assert.equal((await request("printers")).body[0].availability, "livre");
   assert.equal((await request("products")).body[0].stock_units, 8);
   assert.equal(
     Number(
@@ -224,7 +241,8 @@ test("CRUD, validação, produção transacional, concorrência e preservação 
   assert.equal(Number((await request("materials")).body[0].stock_g), 750);
   // Duas impressoras podem disputar um mesmo material: saldo nunca negativo.
   const printer2 = await create("printers", {
-    name: "P2",
+    code: "Impressora 02",
+    brand: "Bambu Lab",
     model: "Modelo teste",
     status: "disponivel",
   });

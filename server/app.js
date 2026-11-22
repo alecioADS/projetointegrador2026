@@ -29,7 +29,8 @@ export function createApp({
       .strict(),
     printers: z
       .object({
-        name: text(120),
+        code: text(120),
+        brand: text(120),
         model: text(120),
         status: z.enum(["disponivel", "manutencao"]),
       })
@@ -60,7 +61,13 @@ export function createApp({
   for (const [table, schema] of Object.entries(schemas)) {
     app.get(`/api/${table}`, async (req, res) => {
       res.json(
-        (await pool.query(`SELECT * FROM ${table} ORDER BY id DESC`)).rows,
+        (
+          await pool.query(
+            table === "printers"
+              ? `SELECT p.*, CASE WHEN p.status='manutencao' THEN 'manutencao' WHEN EXISTS (SELECT 1 FROM production_orders o WHERE o.printer_id=p.id AND o.status='em_producao') THEN 'ocupada' ELSE 'livre' END AS availability FROM printers p ORDER BY p.id DESC`
+              : `SELECT * FROM ${table} ORDER BY id DESC`,
+          )
+        ).rows,
       );
     });
     app.post(`/api/${table}`, async (req, res) => {
@@ -147,7 +154,7 @@ export function createApp({
     res.json(
       (
         await pool.query(
-          `SELECT o.*,p.name product_name,m.name material_name,r.name printer_name FROM production_orders o JOIN products p ON p.id=o.product_id JOIN materials m ON m.id=o.material_id JOIN printers r ON r.id=o.printer_id ORDER BY o.id DESC`,
+          `SELECT o.*,p.name product_name,m.name material_name,r.code printer_name,r.brand printer_brand,r.model printer_model FROM production_orders o JOIN products p ON p.id=o.product_id JOIN materials m ON m.id=o.material_id JOIN printers r ON r.id=o.printer_id ORDER BY o.id DESC`,
         )
       ).rows,
     );
@@ -163,11 +170,35 @@ export function createApp({
       })
       .strict()
       .parse(req.body);
-    const { rows } = await pool.query(
-      "INSERT INTO production_orders(product_id,printer_id,material_id,quantity,planned_g) VALUES ($1,$2,$3,$4,$5) RETURNING *",
-      Object.values(data),
-    );
-    res.status(201).json(rows[0]);
+    const order = await transaction(async (c) => {
+      const printer = await row(c, "printers", data.printer_id);
+      if (printer.status !== "disponivel")
+        fail("A impressora está em manutenção.");
+      if (
+        (
+          await c.query(
+            "SELECT 1 FROM production_orders WHERE printer_id=$1 AND status='em_producao'",
+            [printer.id],
+          )
+        ).rowCount
+      )
+        fail(
+          "A impressora está ocupada. Aguarde a conclusão da produção atual.",
+        );
+      return (
+        await c.query(
+          "INSERT INTO production_orders(product_id,printer_id,material_id,quantity,planned_g) VALUES ($1,$2,$3,$4,$5) RETURNING *",
+          [
+            data.product_id,
+            data.printer_id,
+            data.material_id,
+            data.quantity,
+            data.planned_g,
+          ],
+        )
+      ).rows[0];
+    });
+    res.status(201).json(order);
   });
   app.post("/api/orders/:id/:action", async (req, res) => {
     const key = id(req.params.id),
@@ -273,9 +304,10 @@ export function createApp({
           "Registro vinculado a outros dados ou referência inexistente. Preserve o histórico.",
       });
     if (err.code === "23505")
-      return res
-        .status(409)
-        .json({ error: "SKU duplicado ou impressora já ocupada." });
+      return res.status(409).json({
+        error:
+          "Código de impressora ou SKU duplicado, ou impressora já ocupada.",
+      });
     if (err.type === "entity.parse.failed")
       return res.status(400).json({ error: "JSON inválido." });
     if (err.status) return res.status(err.status).json({ error: err.message });

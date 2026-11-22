@@ -289,11 +289,13 @@ td .actions button {
   margin: 2px;
 }
 .concluida,
-.disponivel {
+.disponivel,
+.livre {
   background: #eaf2ed;
   color: #386b50;
 }
-.em_producao {
+.em_producao,
+.ocupada {
   background: #eaf0f6;
   color: #3a6385;
 }

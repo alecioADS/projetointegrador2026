@@ -12,7 +12,7 @@ Todos são eventos externos, estimulados por uma ação do operador. A resposta 
 | 02 | Consultar materiais | Abrir Materiais ou buscar | Ler e filtrar cadastros | Lista e saldo em gramas |
 | 03 | Alterar material | Salvar edição | Atualizar dados descritivos e custo, preservar saldo | Cadastro atualizado |
 | 04 | Excluir material | Confirmar exclusão | Excluir somente sem vínculos | Lista atualizada ou impedimento |
-| 05 | Cadastrar impressora | Envio do formulário | Gravar nome, modelo e situação | Impressora na lista |
+| 05 | Cadastrar impressora | Envio do formulário | Gravar código único, marca, modelo e situação | Impressora na lista |
 | 06 | Consultar impressoras | Abrir Impressoras ou buscar | Consultar cadastros e ocupação | Lista e situação |
 | 07 | Alterar impressora | Salvar edição | Atualizar cadastro; impedir manutenção se ocupada | Dados e situação atualizados |
 | 08 | Excluir impressora | Confirmar exclusão | Excluir somente sem ordens vinculadas | Lista atualizada ou impedimento |
@@ -22,7 +22,7 @@ Todos são eventos externos, estimulados por uma ação do operador. A resposta 
 | 12 | Excluir produto | Confirmar exclusão | Excluir somente sem vínculos | Lista atualizada ou impedimento |
 | 13 | Registrar entrada de material | Confirmar entrada | Somar gramas e gravar movimento na mesma transação | Saldo e histórico atualizados |
 | 14 | Consultar movimentações | Abrir Movimentações ou buscar | Ler entradas, consumos e produtos gerados | Histórico com data, motivo e ordem |
-| 15 | Planejar produção | Enviar nova ordem | Vincular material, produto e impressora; gravar quantidade e consumo estimado | Ordem planejada |
+| 15 | Planejar produção | Enviar nova ordem | Selecionar marca/modelo e uma impressora livre; vincular material e produto e gravar quantidade e consumo estimado | Ordem planejada |
 | 16 | Consultar ordens | Abrir Produção ou buscar | Ler ordens com nomes dos cadastros | Lista, estados, quantidades e custo |
 | 17 | Iniciar produção | Acionar Iniciar | Verificar estado e disponibilidade da impressora; alterar ordem | Ordem em produção |
 | 18 | Concluir produção | Informar consumo real e aprovadas | Validar saldo, consumir material, gerar produto, gravar movimentos e custo em transação única | Ordem concluída e estoques atualizados |

@@ -11,6 +11,8 @@ const labels = {
 };
 const statuses = {
   disponivel: "Disponível",
+  livre: "Livre",
+  ocupada: "Ocupada",
   manutencao: "Em manutenção",
   planejada: "Planejada",
   em_producao: "Em produção",
@@ -25,7 +27,8 @@ const fields = {
     ["cost_per_kg", "Custo por kg (R$)", "number"],
   ],
   printers: [
-    ["name", "Nome"],
+    ["code", "Código (ex.: Impressora 01)"],
+    ["brand", "Marca"],
     ["model", "Modelo"],
     ["status", "Situação", "status"],
   ],
@@ -36,7 +39,7 @@ const fields = {
 };
 const initial = {
   materials: { name: "", family: "PLA", color: "", cost_per_kg: "" },
-  printers: { name: "", model: "", status: "disponivel" },
+  printers: { code: "", brand: "", model: "", status: "disponivel" },
   products: { name: "", sku: "" },
   entry: { material_id: "", quantity: "", reason: "" },
   order: {
@@ -74,6 +77,8 @@ async function api(path, method = "GET", body) {
   return result;
 }
 function App() {
+  const [printerModel, setPrinterModel] = useState("");
+  const modelKey = (p) => JSON.stringify([p.brand, p.model]);
   const [page, setPage] = useState("dashboard"),
     [data, setData] = useState({
       materials: [],
@@ -133,6 +138,10 @@ function App() {
     };
   }, [modal, busy]);
   function open(kind, row = null) {
+    if (kind === "order") {
+      setPrinterModel("");
+      void refresh();
+    }
     setError("");
     setNotice("");
     setModal({ kind, row });
@@ -196,7 +205,7 @@ function App() {
                 ]
               : options
             ).map((o) => (
-              <option key={o.id} value={o.id}>
+              <option key={o.id} value={o.id} disabled={o.disabled}>
                 {o.name}
               </option>
             ))}
@@ -396,7 +405,7 @@ function App() {
                     {(page === "materials"
                       ? ["Material", "Tipo / Cor", "Saldo", "Custo/kg", "Ações"]
                       : page === "printers"
-                        ? ["Impressora", "Modelo", "Situação", "Ações"]
+                        ? ["Código", "Marca", "Modelo", "Situação", "Ações"]
                         : page === "products"
                           ? ["Produto", "SKU", "Estoque", "Ações"]
                           : page === "orders"
@@ -429,18 +438,10 @@ function App() {
                         </>
                       ) : page === "printers" ? (
                         <>
-                          <td>{row.name}</td>
+                          <td>{row.code}</td>
+                          <td>{row.brand}</td>
                           <td>{row.model}</td>
-                          <td>
-                            {badge(row.status)}
-                            {data.orders.some(
-                              (o) =>
-                                o.printer_id === row.id &&
-                                o.status === "em_producao",
-                            ) && (
-                              <span className="badge em_producao">Ocupada</span>
-                            )}
-                          </td>
+                          <td>{badge(row.availability)}</td>
                           <td>{actions(row)}</td>
                         </>
                       ) : page === "products" ? (
@@ -457,6 +458,9 @@ function App() {
                           </td>
                           <td>
                             {row.printer_name}
+                            <small>
+                              {row.printer_brand} · {row.printer_model}
+                            </small>
                             <small>{row.material_name}</small>
                           </td>
                           <td>
@@ -588,7 +592,7 @@ function App() {
               <>
                 <p>
                   {modal.kind === "delete"
-                    ? `Excluir “${modal.row.name}”? Registros com histórico vinculado não podem ser excluídos.`
+                    ? `Excluir “${modal.row.code ?? modal.row.name}”? Registros com histórico vinculado não podem ser excluídos.`
                     : `Cancelar a ordem #${modal.row.id}? Essa ação encerra o planejamento.`}
                 </p>
                 <div className="actions end">
@@ -623,12 +627,57 @@ function App() {
                 {modal.kind === "order" && (
                   <>
                     {input("product_id", "Produto", "select", data.products)}
+                    <label>
+                      Modelo da impressora
+                      <select
+                        aria-label="Modelo da impressora"
+                        required
+                        value={printerModel}
+                        onChange={(e) => {
+                          setPrinterModel(e.target.value);
+                          setForm({ ...form, printer_id: "" });
+                        }}
+                      >
+                        <option value="">Selecione o modelo…</option>
+                        {[
+                          ...new Map(
+                            data.printers.map((p) => [modelKey(p), p]),
+                          ).entries(),
+                        ].map(([key, p]) => (
+                          <option key={key} value={key}>
+                            {p.brand} · {p.model}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     {input(
                       "printer_id",
                       "Impressora",
                       "select",
-                      data.printers.filter((p) => p.status === "disponivel"),
+                      data.printers
+                        .filter((p) => modelKey(p) === printerModel)
+                        .map((p) => ({
+                          id: p.id,
+                          name:
+                            p.code +
+                            (p.availability !== "livre"
+                              ? ` — ${statuses[p.availability]}`
+                              : ""),
+                          disabled: p.availability !== "livre",
+                        })),
                     )}
+                    {printerModel &&
+                      !data.printers.some(
+                        (p) =>
+                          modelKey(p) === printerModel &&
+                          p.availability === "livre",
+                      ) && (
+                        <p className="muted">
+                          Nenhuma impressora livre deste modelo. Impressoras
+                          ocupadas são liberadas automaticamente ao concluir a
+                          produção.
+                        </p>
+                      )}
                     {input("material_id", "Material", "select", data.materials)}
                     {input("quantity", "Quantidade de peças", "number")}
                     {input("planned_g", "Consumo estimado (g)", "number")}

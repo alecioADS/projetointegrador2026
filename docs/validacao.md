@@ -21,3 +21,7 @@ O servidor PostgreSQL nativo não foi iniciado nesta sessão por restrição de 
 ## Entregas acadêmicas
 
 O aplicativo e os arquivos de escopo/modelo de dados/estados são a base técnica. Ainda faltam a caracterização real da empresa em quatro páginas e o conjunto completo de UML: descrição dos casos de uso, diagrama de casos de uso, classes, objetos e sequências por caso de uso. Não há dados fictícios apresentados como fatos da empresa.
+
+## Identificação e disponibilidade de impressoras
+
+Cadastro com código único (sem distinção de maiúsculas), marca e modelo. Testes aprovados para filtro por modelo, reset da unidade ao trocar o modelo, bloqueio de ocupadas na interface e API, liberação automática na conclusão e migração repetível preservando os cadastros anteriores.

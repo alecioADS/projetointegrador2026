@@ -61,3 +61,17 @@ erDiagram
   numeric material_cost
  }
 %% slot 1..4; único (order_id,material_id). O material_id na ordem é mantido como referência legada ao primeiro filamento.
+
+ PRODUCTS ||--o{ SALES : vendido
+ SALES |o--o{ STOCK_MOVEMENTS : saida
+ SALES {
+  int id PK
+  uuid request_id UK
+  int product_id FK
+  int quantity
+  varchar channel
+  numeric unit_price
+  numeric total_amount
+  timestamptz created_at
+ }
+%% total_amount gerado no banco (quantity * unit_price); stock_movements.sale_id referencia a venda.

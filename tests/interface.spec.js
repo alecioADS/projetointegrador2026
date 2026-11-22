@@ -359,3 +359,113 @@ test("saldo editável registra ajustes no estoque", async ({ page }) => {
       .map((m) => Number(m.quantity)),
   ).toEqual([-200, 150, 100]);
 });
+
+test("venda por marketplace e varejo mostra bruto e baixa estoque", async ({
+  page,
+}, testInfo) => {
+  const base = process.env.UI_BASE_URL || "http://127.0.0.1:5173";
+  const create = async (path, data) => {
+    const r = await page.request.post(base + "/api/" + path, { data });
+    expect(r.status()).toBe(201);
+    return r.json();
+  };
+  const m = await create("materials", {
+    brand: "Marca venda",
+    family: "PLA",
+    color: "Preto",
+    cost_per_kg: 100,
+    initial_stock_g: 1000,
+  });
+  const p = await create("printers", {
+    code: "VENDA-UI",
+    brand: "Bambu Lab",
+    model: "A1",
+    status: "disponivel",
+  });
+  const product = await create("products", {
+    name: "Peça para venda",
+    sku: "VENDA-UI",
+  });
+  const order = await create("orders", {
+    printer_id: p.id,
+    product_id: product.id,
+    quantity: 6,
+    materials: [{ material_id: m.id, planned_g: 100 }],
+  });
+  expect(
+    (await page.request.post(`${base}/api/orders/${order.id}/start`)).status(),
+  ).toBe(200);
+  expect(
+    (
+      await page.request.post(`${base}/api/orders/${order.id}/finish`, {
+        data: {
+          approved_quantity: 6,
+          materials: [{ material_id: m.id, actual_g: 100 }],
+        },
+      })
+    ).status(),
+  ).toBe(200);
+  await page.goto(base);
+  await page.getByRole("button", { name: "Vendas", exact: true }).click();
+  await page.getByRole("button", { name: "+ Registrar venda" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Registrar venda", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Produto", { exact: true })
+    .selectOption({ label: "Peça para venda · VENDA-UI — 6 un." });
+  await page.getByLabel("Quantidade vendida").fill("2");
+  await page
+    .getByLabel("Canal de venda")
+    .selectOption({ label: "Marketplace" });
+  await page.getByLabel("Preço unitário (R$)").fill("25.50");
+  await expect(page.locator(".sale-total strong")).toHaveText(/51,00/);
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("cell", { name: "Marketplace", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("cell", { name: /51,00/ })).toBeVisible();
+  await page.getByRole("button", { name: "+ Registrar venda" }).click();
+  await page
+    .getByLabel("Produto", { exact: true })
+    .selectOption({ label: "Peça para venda · VENDA-UI — 4 un." });
+  await page.getByLabel("Quantidade vendida").fill("1");
+  await page.getByLabel("Canal de venda").selectOption({ label: "Varejo" });
+  await page.getByLabel("Preço unitário (R$)").fill("10");
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.locator(".sales-stats article").first().locator("strong"),
+  ).toHaveText(/61,00/);
+  await page.screenshot({
+    path: testInfo.outputPath("vendas-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: testInfo.outputPath("vendas-mobile.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole("button", { name: "+ Registrar venda" }).click();
+  await page
+    .getByLabel("Produto", { exact: true })
+    .selectOption({ label: "Peça para venda · VENDA-UI — 3 un." });
+  await page.getByLabel("Quantidade vendida").fill("4");
+  await page.getByLabel("Preço unitário (R$)").fill("10");
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
+    "Estoque insuficiente",
+  );
+  await page.getByRole("button", { name: "Fechar", exact: true }).click();
+  const products = await (
+    await page.request.get(base + "/api/products")
+  ).json();
+  expect(products.find((p) => p.id === product.id).stock_units).toBe(3);
+});

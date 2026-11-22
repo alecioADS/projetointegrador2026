@@ -8,6 +8,7 @@ const labels = {
   products: "Produtos",
   orders: "Produção",
   movements: "Movimentações",
+  sales: "Vendas",
 };
 const statuses = {
   disponivel: "Disponível",
@@ -54,8 +55,10 @@ const initial = {
     quantity: "",
   },
   finish: { approved_quantity: "" },
+  sales: { product_id: "", quantity: "", channel: "varejo", unit_price: "" },
 };
 const numeric = new Set([
+  "unit_price",
   "cost_per_kg",
   "initial_stock_g",
   "stock_g",
@@ -83,6 +86,101 @@ async function api(path, method = "GET", body) {
   if (!response.ok) throw Error(result.error || "Não foi possível concluir.");
   return result;
 }
+function SalesPanel({ sales, allSales, search, setSearch, onRefresh }) {
+  const total = (items) =>
+    items.reduce(
+      (sum, s) => sum + Math.round(Number(s.total_amount) * 100),
+      0,
+    ) / 100;
+  const stats = [
+    ["Faturamento bruto total", money(total(allSales))],
+    [
+      "Marketplace · bruto",
+      money(total(allSales.filter((s) => s.channel === "marketplace"))),
+    ],
+    [
+      "Varejo · bruto",
+      money(total(allSales.filter((s) => s.channel === "varejo"))),
+    ],
+    [
+      "Unidades vendidas",
+      number(allSales.reduce((sum, s) => sum + s.quantity, 0)),
+    ],
+  ];
+  return (
+    <>
+      <section className="stats sales-stats">
+        {stats.map(([label, value]) => (
+          <article key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </article>
+        ))}
+      </section>
+      <section className="panel">
+        <div className="table-toolbar">
+          <h2>
+            Vendas registradas <span className="muted">({sales.length})</span>
+          </h2>
+          <input
+            aria-label="Buscar vendas"
+            placeholder="Buscar vendas…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button onClick={onRefresh}>Atualizar</button>
+        </div>
+        <p className="muted">
+          Indicadores acumulados de todas as vendas. Faturamento bruto, sem
+          dedução de taxas ou despesas.
+        </p>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                {[
+                  "Data",
+                  "Produto",
+                  "Canal",
+                  "Quantidade",
+                  "Preço unitário",
+                  "Total bruto",
+                ].map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sales.map((s) => (
+                <tr key={s.id}>
+                  <td>{new Date(s.created_at).toLocaleString("pt-BR")}</td>
+                  <td>
+                    {s.product_name}
+                    <small>
+                      {s.sku} · Venda #{s.id}
+                    </small>
+                  </td>
+                  <td>
+                    {s.channel === "marketplace" ? "Marketplace" : "Varejo"}
+                  </td>
+                  <td>{s.quantity} un.</td>
+                  <td>{money(s.unit_price)}</td>
+                  <td>{money(s.total_amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!sales.length && (
+            <div className="empty">
+              Nenhuma venda encontrada. Registre uma venda para acompanhar a
+              saída dos produtos.
+            </div>
+          )}
+        </div>
+      </section>
+    </>
+  );
+}
 function App() {
   const emptyFilament = () => ({
     key: crypto.randomUUID(),
@@ -102,6 +200,7 @@ function App() {
       products: [],
       orders: [],
       movements: [],
+      sales: [],
       dashboard: {},
     });
   const [loading, setLoading] = useState(true),
@@ -172,7 +271,10 @@ function App() {
               ? { stock_g: row.stock_g, expected_stock_g: Number(row.stock_g) }
               : {}),
           }
-        : { ...initial[kind] },
+        : {
+            ...initial[kind],
+            ...(kind === "sales" ? { request_id: crypto.randomUUID() } : {}),
+          },
     );
   }
   async function act(task) {
@@ -255,7 +357,8 @@ function App() {
                   key === "initial_stock_g" ||
                   key === "stock_g"
                   ? 0
-                  : ["quantity"].includes(key) && modal?.kind === "order"
+                  : ["quantity"].includes(key) &&
+                      ["order", "sales"].includes(modal?.kind)
                     ? 1
                     : 0.01
                 : undefined
@@ -263,7 +366,8 @@ function App() {
             step={
               type === "number"
                 ? key === "approved_quantity" ||
-                  (key === "quantity" && modal?.kind === "order")
+                  (key === "quantity" &&
+                    ["order", "sales"].includes(modal?.kind))
                   ? 1
                   : 0.01
                 : undefined
@@ -330,14 +434,14 @@ function App() {
               }}
             >
               <span aria-hidden="true">
-                {["◈", "▤", "▣", "◇", "▷", "⇄"][i]}
+                {["◈", "▤", "▣", "◇", "▷", "⇄", "▥"][i]}
               </span>
               {label}
             </button>
           ))}
         </nav>
         <div className="sidebar-note">
-          <span className="dot" /> Gestão de estoque e produção
+          <span className="dot" /> Gestão de estoque, produção e vendas
           <small>AVS Labs 3D</small>
         </div>
       </aside>
@@ -353,6 +457,11 @@ function App() {
             </p>
           </div>
           <div className="actions">
+            {page === "sales" && (
+              <button className="primary" onClick={() => open("sales")}>
+                + Registrar venda
+              </button>
+            )}
             {page === "materials" && (
               <button onClick={() => open("entry")}>Entrada de estoque</button>
             )}
@@ -424,6 +533,14 @@ function App() {
               </ol>
             </section>
           </>
+        ) : page === "sales" ? (
+          <SalesPanel
+            sales={filtered}
+            allSales={data.sales}
+            search={search}
+            setSearch={setSearch}
+            onRefresh={refresh}
+          />
         ) : (
           <section className="panel">
             <div className="table-toolbar">
@@ -464,7 +581,13 @@ function App() {
                                 "Situação",
                                 "Ações",
                               ]
-                            : ["Data", "Item", "Movimento", "Motivo", "Ordem"]
+                            : [
+                                "Data",
+                                "Item",
+                                "Movimento",
+                                "Motivo",
+                                "Referência",
+                              ]
                     ).map((h) => (
                       <th key={h}>{h}</th>
                     ))}
@@ -595,7 +718,13 @@ function App() {
                             {row.material_id ? "g" : "un."}
                           </td>
                           <td>{row.reason}</td>
-                          <td>{row.order_id ? "#" + row.order_id : "—"}</td>
+                          <td>
+                            {row.sale_id
+                              ? "Venda #" + row.sale_id
+                              : row.order_id
+                                ? "Ordem #" + row.order_id
+                                : "—"}
+                          </td>
                         </>
                       )}
                     </tr>
@@ -613,7 +742,7 @@ function App() {
             </div>
           </section>
         )}
-        <footer>AVS Labs 3D · Gestão de estoque e produção</footer>
+        <footer>AVS Labs 3D · Gestão de estoque, produção e vendas</footer>
       </main>
       {modal && (
         <div className="overlay">
@@ -625,21 +754,23 @@ function App() {
           >
             <div className="modal-header">
               <h2 id="modal-title">
-                {modal.kind === "delete-order"
-                  ? "Apagar ordem cancelada"
-                  : modal.kind === "delete"
-                    ? "Excluir cadastro"
-                    : modal.kind === "cancel"
-                      ? "Cancelar ordem"
-                      : modal.kind === "entry"
-                        ? "Entrada de material"
-                        : modal.kind === "order"
-                          ? "Nova ordem de produção"
-                          : modal.kind === "finish"
-                            ? "Concluir produção"
-                            : modal.row
-                              ? "Editar cadastro"
-                              : "Novo cadastro"}
+                {modal.kind === "sales"
+                  ? "Registrar venda"
+                  : modal.kind === "delete-order"
+                    ? "Apagar ordem cancelada"
+                    : modal.kind === "delete"
+                      ? "Excluir cadastro"
+                      : modal.kind === "cancel"
+                        ? "Cancelar ordem"
+                        : modal.kind === "entry"
+                          ? "Entrada de material"
+                          : modal.kind === "order"
+                            ? "Nova ordem de produção"
+                            : modal.kind === "finish"
+                              ? "Concluir produção"
+                              : modal.row
+                                ? "Editar cadastro"
+                                : "Novo cadastro"}
               </h2>
               <button
                 aria-label="Fechar"
@@ -687,6 +818,47 @@ function App() {
             ) : (
               <form onSubmit={save}>
                 {fields[modal.kind]?.map((f) => input(...f))}
+                {modal.kind === "sales" && (
+                  <>
+                    {input(
+                      "product_id",
+                      "Produto",
+                      "select",
+                      data.products
+                        .filter((p) => p.stock_units > 0)
+                        .map((p) => ({
+                          id: p.id,
+                          name: `${p.name} · ${p.sku} — ${p.stock_units} un.`,
+                        })),
+                    )}
+                    {input("quantity", "Quantidade vendida", "number")}
+                    {input("channel", "Canal de venda", "select", [
+                      { id: "marketplace", name: "Marketplace" },
+                      { id: "varejo", name: "Varejo" },
+                    ])}
+                    {input("unit_price", "Preço unitário (R$)", "number")}
+                    <div className="sale-total">
+                      <span>Faturamento bruto desta venda</span>
+                      <strong>
+                        {money(
+                          (Number(form.quantity) || 0) *
+                            (Number(form.unit_price) || 0),
+                        )}
+                      </strong>
+                    </div>
+                    <p className="muted">
+                      A venda dará baixa no estoque de produtos. O total é
+                      bruto, sem descontar taxas, despesas ou custos.
+                    </p>
+                    {!data.products.some((p) => p.stock_units > 0) && (
+                      <p className="muted">
+                        Não há produtos disponíveis. Conclua uma produção para
+                        registrar vendas.
+                      </p>
+                    )}
+                  </>
+                )}
+
                 {modal.kind === "materials" &&
                   (!modal.row ? (
                     <>

@@ -215,6 +215,85 @@ export function createApp({
       }),
     );
   });
+  app.get("/api/sales", async (req, res) => {
+    res.json(
+      (
+        await pool.query(
+          "SELECT s.*,p.name product_name,p.sku FROM sales s JOIN products p ON p.id=s.product_id ORDER BY s.id DESC",
+        )
+      ).rows,
+    );
+  });
+  app.post("/api/sales", async (req, res) => {
+    const data = z
+      .object({
+        request_id: z.uuid(),
+        product_id: z.number().int().positive(),
+        quantity: z.number().int().positive().max(1000000),
+        channel: z.enum(["marketplace", "varejo"]),
+        unit_price: positive,
+      })
+      .strict()
+      .parse(req.body);
+    const result = await transaction(async (c) => {
+      // O mesmo pedido reenviado não deve duplicar a venda nem a saída de estoque.
+      const repeated = async () => {
+        const existing = (
+          await c.query("SELECT * FROM sales WHERE request_id=$1", [
+            data.request_id,
+          ])
+        ).rows[0];
+        if (
+          existing &&
+          (existing.product_id !== data.product_id ||
+            existing.quantity !== data.quantity ||
+            existing.channel !== data.channel ||
+            Number(existing.unit_price) !== data.unit_price)
+        )
+          fail(
+            "Esta identificação já foi utilizada em outra venda. Abra um novo registro.",
+          );
+        return existing;
+      };
+      const previous = await repeated();
+      if (previous) return { sale: previous, repeated: true };
+      const product = await row(c, "products", data.product_id);
+      const afterLock = await repeated();
+      if (afterLock) return { sale: afterLock, repeated: true };
+      if (product.stock_units < data.quantity)
+        fail(
+          `Estoque insuficiente. Disponível: ${product.stock_units} unidade(s).`,
+        );
+      const sale = (
+        await c.query(
+          "INSERT INTO sales(request_id,product_id,quantity,channel,unit_price) VALUES ($1,$2,$3,$4,$5) RETURNING *",
+          [
+            data.request_id,
+            data.product_id,
+            data.quantity,
+            data.channel,
+            data.unit_price,
+          ],
+        )
+      ).rows[0];
+      await c.query(
+        "UPDATE products SET stock_units=stock_units-$1 WHERE id=$2",
+        [data.quantity, product.id],
+      );
+      await c.query(
+        "INSERT INTO stock_movements(product_id,sale_id,quantity,reason) VALUES ($1,$2,$3,$4)",
+        [
+          product.id,
+          sale.id,
+          -data.quantity,
+          "Venda · " +
+            (data.channel === "marketplace" ? "Marketplace" : "Varejo"),
+        ],
+      );
+      return { sale, repeated: false };
+    });
+    res.status(result.repeated ? 200 : 201).json(result.sale);
+  });
   app.get("/api/orders", async (req, res) => {
     const orders = (
       await pool.query(

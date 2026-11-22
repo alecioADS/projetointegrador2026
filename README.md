@@ -4,11 +4,11 @@ Versão acadêmica independente do [AvsLabs3D](https://github.com/alecioADS/AvsL
 
 ## Escopo
 
-Uma empresa e um operador local. CRUD de materiais, impressoras e produtos; entrada e histórico de estoque; planejamento, início, conclusão e cancelamento de ordens; painel de indicadores. Sem Supabase, contas, serviços de nuvem ou autenticação. Sem compras, vendas, financeiro, variantes, montagem ou sincronização offline. Uma ordem usa de um a quatro filamentos, uma impressora e um produto. Cada filamento possui marca, material (PLA, PETG etc.) e cor, selecionados separadamente na produção.
+Uma empresa e um operador local. CRUD de materiais, impressoras e produtos; entrada e histórico de estoque; planejamento, início, conclusão e cancelamento de ordens; vendas com faturamento bruto; painel de indicadores. Sem Supabase, contas, serviços de nuvem ou autenticação. Sem compras, contas a pagar/receber, variantes, montagem ou sincronização offline. Uma ordem usa de um a quatro filamentos, uma impressora e um produto. Cada filamento possui marca, material (PLA, PETG etc.) e cor, selecionados separadamente na produção.
 
 **Stack:** React + Vite, API Node.js/Express e PostgreSQL. Impressoras têm código único, marca e modelo. Ao planejar uma produção, selecione o modelo e uma unidade livre; unidades ocupadas ou em manutenção ficam indisponíveis. A conclusão da ordem libera a unidade automaticamente.
 
-O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com seis tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
+O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com sete tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
 
 ## Abrir no dia da apresentação
 
@@ -66,6 +66,13 @@ Abra **http://127.0.0.1:3001**. A API se recusa a iniciar se não conseguir cone
 5. Concluir com 200 g reais e 8 peças aprovadas.
 6. Verificar: material = 800 g; produto = 8 unidades; custo do material da ordem = R$ 20; três movimentos (entrada, consumo e produção).
 7. Tentar concluir novamente e excluir o material: as operações são impedidas.
+8. Em Vendas, vender 2 suportes a R$ 25 por Marketplace: estoque de produtos passa de 8 para 6 e o faturamento bruto aumenta R$ 50.
+
+## Vendas
+
+Na aba **Vendas**, selecione o produto disponível, informe quantidade, canal (Marketplace ou Varejo) e preço unitário. O total bruto é calculado automaticamente e a venda dá baixa no estoque na mesma transação. As vendas são exibidas com data, produto, quantidade, canal, preço unitário e total. Os indicadores somam todo o histórico, com bruto total, bruto por canal e unidades vendidas.
+
+Não há contas a receber, taxas, despesas, comissões, lucro ou emissão fiscal. O valor é faturamento bruto registrado, não resultado líquido nem confirmação de recebimento. Vendas registradas permanecem no histórico. A mesma solicitação reenviada não duplica venda ou estoque. Estoque insuficiente impede o registro completo.
 
 ## Regras e limites
 

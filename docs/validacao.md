@@ -41,3 +41,7 @@ Campo em gramas no cadastro, com validação de quantidade não negativa e preci
 ## Edição do saldo do filamento
 
 Testados aumentos, reduções e saldo zero no formulário de edição. Cada diferença gera movimentação de ajuste sem alterar o histórico anterior; salvar sem mudar o saldo não gera movimento. A versão do saldo exibido é comparada com o banco sob bloqueio para impedir sobrescrita de uma reposição/produção ocorrida durante a edição.
+
+## Vendas e faturamento bruto
+
+Testados cálculo monetário no PostgreSQL, baixa de produtos, bloqueio de saldo insuficiente, canais válidos, precisão monetária, vendas concorrentes, reenvio idempotente e preservação do vínculo no histórico. Jornada de navegador cobre Marketplace e Varejo, totais brutos por canal, saldo atualizado e impedimento de venda acima do disponível. Inspeção de layout em desktop e viewport móvel.

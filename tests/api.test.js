@@ -536,3 +536,135 @@ test("edição ajusta saldo para cima, para baixo e zero sem apagar histórico n
     30,
   );
 });
+
+test("vendas baixam produtos, calculam bruto e evitam saldo negativo e duplicação", async () => {
+  const material = await create("materials", {
+    brand: "Venda teste",
+    family: "PLA",
+    color: "Branco",
+    cost_per_kg: 100,
+    initial_stock_g: 1000,
+  });
+  const printer = await create("printers", {
+    code: "VENDA-01",
+    brand: "Bambu Lab",
+    model: "A1",
+    status: "disponivel",
+  });
+  const product = await create("products", {
+    name: "Produto para venda",
+    sku: "VENDA-01",
+  });
+  const order = await create("orders", {
+    printer_id: printer.id,
+    product_id: product.id,
+    quantity: 10,
+    materials: [{ material_id: material.id, planned_g: 100 }],
+  });
+  await request(`orders/${order.id}/start`, "POST");
+  assert.equal(
+    (
+      await request(`orders/${order.id}/finish`, "POST", {
+        approved_quantity: 10,
+        materials: [{ material_id: material.id, actual_g: 100 }],
+      })
+    ).status,
+    200,
+  );
+  const payload = {
+    request_id: crypto.randomUUID(),
+    product_id: product.id,
+    quantity: 3,
+    channel: "marketplace",
+    unit_price: 12.35,
+  };
+  const sale = await create("sales", payload);
+  assert.equal(Number(sale.total_amount), 37.05);
+  assert.equal((await request("sales", "POST", payload)).status, 200);
+  assert.equal(
+    (await request("sales", "POST", { ...payload, quantity: 2 })).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("sales", "POST", {
+        ...payload,
+        request_id: crypto.randomUUID(),
+        quantity: 8,
+      })
+    ).status,
+    409,
+  );
+  for (const invalid of [
+    { quantity: 0 },
+    { quantity: 1.5 },
+    { quantity: -1 },
+    { unit_price: 0 },
+    { unit_price: -1 },
+    { unit_price: 1.001 },
+    { channel: "outro" },
+  ])
+    assert.equal(
+      (
+        await request("sales", "POST", {
+          ...payload,
+          request_id: crypto.randomUUID(),
+          ...invalid,
+        })
+      ).status,
+      400,
+    );
+  const races = await Promise.all([
+    request("sales", "POST", {
+      ...payload,
+      request_id: crypto.randomUUID(),
+      quantity: 5,
+      channel: "varejo",
+      unit_price: 10,
+    }),
+    request("sales", "POST", {
+      ...payload,
+      request_id: crypto.randomUUID(),
+      quantity: 5,
+      channel: "varejo",
+      unit_price: 10,
+    }),
+  ]);
+  assert.deepEqual(races.map((r) => r.status).sort(), [201, 409]);
+  const duplicate = {
+    ...payload,
+    request_id: crypto.randomUUID(),
+    quantity: 1,
+    channel: "varejo",
+    unit_price: 1,
+  };
+  const repeats = await Promise.all([
+    request("sales", "POST", duplicate),
+    request("sales", "POST", duplicate),
+  ]);
+  assert.deepEqual(repeats.map((r) => r.status).sort(), [200, 201]);
+  assert.equal(
+    (await request("products")).body.find((p) => p.id === product.id)
+      .stock_units,
+    1,
+  );
+  const sales = (await request("sales")).body.filter(
+    (s) => s.product_id === product.id,
+  );
+  assert.equal(sales.length, 3);
+  assert.equal(
+    sales.reduce(
+      (total, s) => total + Math.round(Number(s.total_amount) * 100),
+      0,
+    ),
+    8805,
+  );
+  const movements = (await request("movements")).body.filter(
+    (m) => m.product_id === product.id && m.sale_id,
+  );
+  assert.deepEqual(
+    movements.map((m) => Number(m.quantity)).sort((a, b) => a - b),
+    [-5, -3, -1],
+  );
+  assert.equal((await request("products/" + product.id, "DELETE")).status, 409);
+});

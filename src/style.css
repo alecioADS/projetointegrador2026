@@ -500,3 +500,24 @@ footer {
   font-size: 15px;
   margin-bottom: 4px;
 }
+
+.sales-stats strong {
+  font-size: clamp(19px, 2vw, 28px);
+  overflow-wrap: anywhere;
+}
+.sale-total {
+  background: #edf2f6;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 18px;
+}
+.sale-total span {
+  font-size: 12px;
+  color: #647181;
+}
+.sale-total strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  color: #225b85;
+}

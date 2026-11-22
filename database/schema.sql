@@ -71,4 +71,16 @@ CREATE TABLE IF NOT EXISTS production_order_materials (
 INSERT INTO production_order_materials(order_id,slot,material_id,planned_g,actual_g,material_cost)
  SELECT id,1,material_id,planned_g,actual_g,material_cost FROM production_orders o
  WHERE NOT EXISTS (SELECT 1 FROM production_order_materials om WHERE om.order_id=o.id);
+CREATE TABLE IF NOT EXISTS sales (
+ id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ request_id uuid NOT NULL UNIQUE,
+ product_id integer NOT NULL REFERENCES products(id),
+ quantity integer NOT NULL CHECK (quantity>0),
+ channel varchar(20) NOT NULL CHECK (channel IN ('marketplace','varejo')),
+ unit_price numeric(12,2) NOT NULL CHECK (unit_price>0),
+ total_amount numeric(18,2) GENERATED ALWAYS AS (quantity*unit_price) STORED,
+ created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS sale_id integer REFERENCES sales(id);
+CREATE INDEX IF NOT EXISTS sales_created_at_idx ON sales(created_at DESC);
 COMMIT;

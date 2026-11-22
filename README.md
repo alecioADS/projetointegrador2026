@@ -8,6 +8,12 @@ Uma empresa e um operador local. CRUD de materiais, impressoras e produtos; entr
 
 **Stack:** React + Vite, API Node.js/Express e PostgreSQL. O navegador chama a API; somente a API acessa o banco, usando consultas parametrizadas. Banco com cinco tabelas e chaves estrangeiras. Servidor e banco expostos apenas em `127.0.0.1`.
 
+## Abrir no dia da apresentação
+
+No Mac, dê dois cliques em `Abrir AVS Labs 3D.command`. O iniciador abre o Docker Desktop se necessário, inicia o PostgreSQL, prepara a estrutura sem apagar dados, gera a interface e abre o navegador. Se o sistema já estiver funcionando, apenas abre a página. Pode fechar o Terminal depois da mensagem de sucesso.
+
+Antes da apresentação, execute o iniciador uma vez com internet para garantir que a imagem do PostgreSQL esteja disponível. Depois disso, a operação local não depende de internet. Mantenha Node.js, Docker Desktop e as dependências instalados. Os dados permanecem no volume do PostgreSQL entre reinicializações; não use `docker compose down -v` se quiser preservá-los.
+
 ## Executar
 
 Requer Node.js 22.12+ (validado com Node 24), npm e PostgreSQL. Docker é opcional: serve apenas para executar um PostgreSQL comum.

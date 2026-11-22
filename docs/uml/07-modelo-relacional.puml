@@ -1,0 +1,105 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title Modelo relacional físico
+hide circle
+entity materials {
+ *id : integer <<PK>>
+ --
+ brand : varchar(120)
+ family : varchar(40)
+ color : varchar(60)
+ stock_g : numeric(12,2)
+ cost_per_kg : numeric(12,2) 
+}
+entity printers {
+ *id : integer <<PK>>
+ --
+ code : varchar(120) <<UQ normalizado>>
+ brand : varchar(120)
+ model : varchar(120)
+ status : varchar(20) 
+}
+entity products {
+ *id : integer <<PK>>
+ --
+ name : varchar(120)
+ sku : varchar(60) <<UQ>>
+ stock_units : integer 
+}
+entity production_orders {
+ *id : integer <<PK>>
+ --
+ product_id : integer <<FK>>
+ printer_id : integer <<FK>>
+ material_id : integer <<FK legado>>
+ quantity : integer
+ planned_g : numeric(12,2)
+ actual_g : numeric(12,2) ?
+ approved_quantity : integer ?
+ material_cost : numeric(12,2) ?
+ status : varchar(20)
+ created_at : timestamptz
+ finished_at : timestamptz ? 
+}
+entity production_order_materials {
+ *order_id : integer <<PK FK>>
+ *slot : smallint <<PK>>
+ --
+ material_id : integer <<FK>>
+ planned_g : numeric(12,2)
+ actual_g : numeric(12,2) ?
+ material_cost : numeric(12,2) ? 
+}
+entity stock_movements {
+ *id : integer <<PK>>
+ --
+ material_id : integer <<FK opcional>>
+ product_id : integer <<FK opcional>>
+ order_id : integer <<FK opcional>>
+ sale_id : integer <<FK opcional>>
+ quantity : numeric(12,2)
+ reason : varchar(200)
+ created_at : timestamptz 
+}
+entity sales {
+ *id : integer <<PK>>
+ --
+ request_id : uuid <<UQ>>
+ product_id : integer <<FK>>
+ quantity : integer
+ channel : varchar(20)
+ unit_price : numeric(12,2)
+ total_amount : numeric(18,2) <<gerado>>
+ created_at : timestamptz 
+}
+products ||--o{ production_orders
+printers ||--o{ production_orders
+materials ||--o{ production_orders : primeiro filamento legado
+production_orders ||--o{ production_order_materials
+materials ||--o{ production_order_materials
+materials |o--o{ stock_movements
+products |o--o{ stock_movements
+production_orders |o--o{ stock_movements
+products ||--o{ sales
+sales |o--o{ stock_movements
+note bottom
+ Cardinalidade mínima 1 dos itens e máximo 4 são validados na API.
+ O banco limita slot a 1..4 e proíbe filamento repetido por ordem.
+ Impressora: índice único parcial para status em_producao.
+ Movimentação: material_id XOR product_id obrigatório.
+end note
+@enduml

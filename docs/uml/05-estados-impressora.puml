@@ -1,0 +1,29 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title Estados operacionais da impressora
+[*] --> Livre : cadastrar disponível
+[*] --> Manutencao : cadastrar em manutenção
+Livre --> Ocupada : iniciar ordem planejada
+Ocupada --> Livre : concluir a única ordem em execução
+Livre --> Manutencao : alterar situação [sem ordem em execução]
+Manutencao --> Livre : liberar manutenção
+note bottom of Ocupada
+ Estado operacional derivado, não coluna gravada.
+ Em printers.status ficam disponivel ou manutencao.
+ Ocupada resulta de uma ordem em_producao.
+end note
+@enduml

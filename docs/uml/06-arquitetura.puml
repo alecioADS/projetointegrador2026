@@ -1,0 +1,46 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title Arquitetura de execução local
+node "Computador do operador" {
+ artifact "Iniciador macOS\n.command / ícone .app" as launcher
+ node "Navegador" {
+ component "React + CSS\ninterface responsiva" as ui
+ }
+ node "Node.js / 127.0.0.1:3001" {
+  component "Express\nrotas + validação Zod" as api
+  component "Transações pg" as pg
+  component "CSV + ZIP (fflate)" as report
+  artifact "dist/\ninterface compilada" as dist
+ }
+ database "PostgreSQL 18\n127.0.0.1:5432" as db
+ artifact "Volume Docker persistente" as volume
+}
+launcher --> api : iniciar servidor
+launcher --> db : iniciar via Compose
+ui --> api : HTTP JSON /api
+api --> pg : executar regra transacional
+pg --> db : SQL parametrizado
+api --> report : exportação consistente
+report --> pg : leitura de snapshot
+api --> dist : servir arquivos
+ui <-- report : ZIP com CSVs
+db --> volume : persistir
+note bottom
+ Docker é opcional para o banco; PostgreSQL instalado também pode ser usado.
+ No desenvolvimento, Vite usa :5173 e encaminha /api para :3001.
+end note
+@enduml

@@ -1,51 +1,25 @@
-# Validação da versão acadêmica
+# Validação do aplicativo e da documentação
 
-## Verificado localmente
+## Verificação da revisão documentada
 
-- Instalação das dependências e auditoria npm: sem vulnerabilidades reportadas no momento da instalação.
-- Build de produção com Vite: aprovado.
-- Formatação com Prettier: aprovada.
-- Teste de integração da API com PGlite: aprovado. Executa o SQL real e verifica cadastro, edição, exclusão, SKU único, validação, entrada, impedimento de estoque negativo, estados de ordem, ocupação de impressora, custo de material, perda total e preservação do histórico.
-- Requisições simultâneas no teste embarcado verificam a proteção por estado e saldo, com transações serializadas pelo PGlite. Bloqueios entre conexões precisam do teste no servidor PostgreSQL.
+A revisão de comentários foi seguida de build, verificação de formatação, suíte de API/migração e jornadas de navegador. Não foram alteradas regras de negócio para produzir a documentação.
 
-## Interface e execução com PostgreSQL real
+- Build de produção: aprovado.
+- Prettier: aprovado.
+- API e migração com PGlite: sete testes de nível superior aprovados, cobrindo os cenários detalhados em tecnica/08-testes-e-rastreabilidade.md.
+- Navegador Chrome com base temporária isolada: seis jornadas aprovadas, incluindo multicor, vendas, edição de saldo, exclusão de cancelada e download ZIP.
+- PostgreSQL real: o workflow .github/workflows/ci.yml executa a integração nativa a cada push. Consultar o resultado associado ao commit final na aba Actions.
 
-- Jornada Playwright no Chrome local: aprovada (cadastros → entrada → ordem → início → conclusão → consulta de saldo e histórico).
-- Capturas de desktop (1440 px) e celular (390 px): inspecionadas visualmente, sem transbordamento horizontal da página no celular. Navegação e tabelas podem rolar horizontalmente dentro de seus contêineres.
-- A execução local de interface usou banco PGlite temporário somente para a verificação; a aplicação entregue exige PostgreSQL comum.
-- GitHub Actions, execução inicial: instalação, formatação, build, integração com PostgreSQL 18 real e criação do esquema aprovados. O teste de interface identificou rótulos de seleção ambíguos, corrigidos com nomes acessíveis explícitos.
-- O workflow executa a jornada de navegador sobre o PostgreSQL real em cada push. Consulte a aba Actions para o resultado do commit atual e o artefato `verificacao-interface` com as capturas.
+O PGlite executa SQL PostgreSQL, mas não substitui a verificação de locks entre conexões nativas. Não foram medidos percentual de cobertura, carga, SLA ou uso em dispositivos físicos.
 
-O servidor PostgreSQL nativo não foi iniciado nesta sessão por restrição de memória compartilhada; o Docker estava desligado. Isso foi contornado para verificação pelo teste nativo no ambiente isolado do GitHub, sem alterar serviços da máquina do aluno.
+## Documentação gerada
 
-## Entregas acadêmicas
+Quatro fases em Markdown/PDF; fase 1 com quatro páginas em Arial 12 e entrelinha 18 pt; vinte casos de uso e vinte sequências; classes, objetos e dois estados; modelo físico; arquitetura; referência de API, dicionário dos 49 campos, manuais e checklist. O atlas usa páginas A3 para ampliar diagramas.
 
-O aplicativo e os arquivos de escopo/modelo de dados/estados são a base técnica. Ainda faltam a caracterização real da empresa em quatro páginas e o conjunto completo de UML: descrição dos casos de uso, diagrama de casos de uso, classes, objetos e sequências por caso de uso. Não há dados fictícios apresentados como fatos da empresa.
+As figuras são renderizadas localmente a partir de PlantUML. Os PDFs são renderizados para inspeção visual. O manifesto em output/manifesto-documentacao.json registra páginas, contagens e campos institucionais/empresariais ainda pendentes.
 
-## Identificação e disponibilidade de impressoras
+A caracterização da empresa só pode ser submetida como factual depois de preencher e validar os dados indicados em entrega/dados-do-trabalho.json e no texto da fase 1. Não foram inventados integrantes, porte, histórico ou perfil demográfico de clientes.
 
-Cadastro com código único (sem distinção de maiúsculas), marca e modelo. Testes aprovados para filtro por modelo, reset da unidade ao trocar o modelo, bloqueio de ocupadas na interface e API, liberação automática na conclusão e migração repetível preservando os cadastros anteriores.
+## Segurança do pacote
 
-## Produção com até quatro filamentos
-
-Testados limite de quatro linhas, bloqueio de repetição, filtros independentes de marca/material/cor, consumo real e custo por filamento, rollback de todas as cores em falta de saldo e preservação de ordens antigas. A jornada de navegador cobre seleção e conclusão de quatro cores, baixa independente de estoque, geração de produto uma única vez e liberação da impressora.
-
-## Exclusão de ordens canceladas
-
-Testados o bloqueio de exclusão de ordens planejadas/concluídas, a exclusão transacional de ordens canceladas sem movimentação, a resposta de registro inexistente após excluir e o fluxo de confirmação/voltar no navegador.
-
-## Saldo inicial no cadastro de filamentos
-
-Campo em gramas no cadastro, com validação de quantidade não negativa e precisão de centésimos. Cadastro e movimentação inicial confirmados em uma única transação. Testados saldo positivo/fracionário, saldo zero sem movimento, valores inválidos, edição sem alteração de estoque e jornada no navegador com saldo inicial mais reposição posterior.
-
-## Edição do saldo do filamento
-
-Testados aumentos, reduções e saldo zero no formulário de edição. Cada diferença gera movimentação de ajuste sem alterar o histórico anterior; salvar sem mudar o saldo não gera movimento. A versão do saldo exibido é comparada com o banco sob bloqueio para impedir sobrescrita de uma reposição/produção ocorrida durante a edição.
-
-## Vendas e faturamento bruto
-
-Testados cálculo monetário no PostgreSQL, baixa de produtos, bloqueio de saldo insuficiente, canais válidos, precisão monetária, vendas concorrentes, reenvio idempotente e preservação do vínculo no histórico. Jornada de navegador cobre Marketplace e Varejo, totais brutos por canal, saldo atualizado e impedimento de venda acima do disponível. Inspeção de layout em desktop e viewport móvel.
-
-## Exportação geral em CSV
-
-Testados download do ZIP pelo navegador, oito CSVs por seção, cabeçalhos, acentos, campos com aspas/ponto e vírgula/quebra de linha, vírgula decimal e preservação de quantidades negativas como números. Textos com prefixos de fórmula são neutralizados. O pacote inclui consumos por cor, vendas e referências das movimentações, lidos sob snapshot consistente.
+O pacote inclui documentos, diagramas, SQL e metadados de dependências. Não contém .env, backups, logs, node_modules ou dados reais do banco. As imagens do manual usam dados ilustrativos dos testes automatizados.

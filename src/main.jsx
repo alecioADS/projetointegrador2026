@@ -1,3 +1,7 @@
+/**
+ * Interface web local: React mantém estado de apresentação; persistência pertence à API/PostgreSQL.
+ * Restrições HTML auxiliam o preenchimento, mas todas as gravações são revalidadas no servidor.
+ */
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
@@ -75,6 +79,7 @@ const number = (n) =>
   Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 const money = (n) =>
   Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/** Cliente JSON comum; respostas 204 não possuem corpo para desserializar. */
 async function api(path, method = "GET", body) {
   const response = await fetch("/api/" + path, {
     method,
@@ -86,6 +91,7 @@ async function api(path, method = "GET", body) {
   if (!response.ok) throw Error(result.error || "Não foi possível concluir.");
   return result;
 }
+/** Busca filtra a tabela; indicadores acumulam todas as vendas e somam centavos. */
 function SalesPanel({ sales, allSales, search, setSearch, onRefresh }) {
   const total = (items) =>
     items.reduce(
@@ -181,7 +187,9 @@ function SalesPanel({ sales, allSales, search, setSearch, onRefresh }) {
     </>
   );
 }
+/** Coordena seções por estado React, formulários e dados confirmados pela API. */
 function App() {
+  // Chave de renderização estável para linhas que ainda não possuem material_id.
   const emptyFilament = () => ({
     key: crypto.randomUUID(),
     brand: "",
@@ -192,6 +200,7 @@ function App() {
   const [filaments, setFilaments] = useState([emptyFilament()]);
   const [consumptions, setConsumptions] = useState([]);
   const [printerModel, setPrinterModel] = useState("");
+  // Array serializado evita colisões de uma concatenação textual de marca/modelo.
   const modelKey = (p) => JSON.stringify([p.brand, p.model]);
   const [page, setPage] = useState("dashboard"),
     [data, setData] = useState({
@@ -211,6 +220,7 @@ function App() {
     [form, setForm] = useState({}),
     [busy, setBusy] = useState(false),
     [search, setSearch] = useState("");
+  /** Baixar ZIP via Blob sem guardar cópia na aplicação; liberar a URL temporária depois. */
   async function downloadReports() {
     setExporting(true);
     setError("");
@@ -245,6 +255,7 @@ function App() {
       setExporting(false);
     }
   }
+  /** Recarregar listas completas; a busca da interface não altera as consultas do backend. */
   async function refresh() {
     setLoading(true);
     try {
@@ -287,6 +298,7 @@ function App() {
       previous?.focus();
     };
   }, [modal, busy]);
+  /** Preparar saldo esperado, itens multicor ou UUID estável para reenvio da mesma venda. */
   function open(kind, row = null) {
     if (kind === "finish")
       setConsumptions(row.materials.map((m) => ({ ...m, actual_g: "" })));
@@ -312,6 +324,7 @@ function App() {
           },
     );
   }
+  /** Evitar envio simultâneo na interface e recarregar dados somente após confirmação. */
   async function act(task) {
     setBusy(true);
     setError("");
@@ -326,6 +339,7 @@ function App() {
       setBusy(false);
     }
   }
+  /** Converter números e construir o contrato específico de cada operação. */
   async function save(e) {
     e.preventDefault();
     const payload = Object.fromEntries(
@@ -356,6 +370,7 @@ function App() {
               ),
     );
   }
+  /** Campo com rótulo acessível; opções indisponíveis ficam visíveis e desabilitadas. */
   function input(key, label, type = "text", options = []) {
     return (
       <label key={key}>

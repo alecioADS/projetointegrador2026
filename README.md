@@ -115,4 +115,10 @@ O workflow `.github/workflows/ci.yml` executa build, integração com PostgreSQL
 - `docs/modelagem.mmd`: modelo de dados; `docs/estado-*.mmd`: dois diagramas de estados em Mermaid.
 - `docs/validacao.md`: verificações realizadas e limitações.
 
-A documentação acadêmica final das fases 1 e 2 (incluindo quatro páginas de caracterização da empresa e todos os diagramas UML solicitados) ainda precisa ser elaborada com dados confirmados pelo grupo.
+## Documentação de entrega e manutenção
+
+O índice completo está em [docs/README.md](docs/README.md). Os PDFs estão em [output/pdf](output/pdf) e o pacote consolidado em [output/entrega](output/entrega). A fase 1 tem quatro páginas em Arial 12 e espaçamento 1,5; ainda exige confirmação dos campos empresariais/institucionais marcados. A fase 2 contém vinte casos de uso e vinte sequências, classes, objetos e dois diagramas de estados. A fase 3 acompanha SQL e dicionário; a fase 4 traz o roteiro da apresentação.
+
+A documentação técnica inclui stack com versões do lockfile, arquitetura, requisitos/regras, dicionário das sete tabelas, referência dos 25 endpoints, manual do usuário, instalação, operação, backup/restauração, limites e rastreabilidade dos testes. Diagramas possuem fontes PlantUML e versões PNG/SVG. Não há funcionalidade futura descrita como implementada.
+
+Para gerar novamente os PDFs, instale as dependências de requirements-docs.txt em um ambiente Python e execute scripts/build_docs.py, com fontes Arial disponíveis. Para renderizar UML, informe PLANTUML_JAR e execute scripts/render-uml.sh. Instruções detalhadas ficam no índice da documentação.

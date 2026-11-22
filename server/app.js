@@ -1,3 +1,8 @@
+/**
+ * API local: validação e regras transacionais ficam no servidor.
+ * A fábrica aceita dependências alternativas para testes sem acessar a base do operador.
+ * Identificadores SQL dinâmicos vêm de schemas fechados, nunca de texto livre do cliente.
+ */
 import express from "express";
 import { exportReports } from "./reports.js";
 import { resolve } from "node:path";
@@ -41,6 +46,7 @@ export function createApp({
   function id(value) {
     return z.coerce.number().int().positive().max(2147483647).parse(value);
   }
+  /** Lê e bloqueia um registro; table é sempre um recurso interno conhecido. */
   async function row(c, table, key) {
     const { rows } = await c.query(
       `SELECT * FROM ${table} WHERE id=$1 FOR UPDATE`,
@@ -67,6 +73,7 @@ export function createApp({
     );
     res.json(rows[0]);
   });
+  // Whitelist de recursos: os valores usam placeholders e as colunas vêm dos schemas estritos.
   for (const [table, schema] of Object.entries(schemas)) {
     app.get(`/api/${table}`, async (req, res) => {
       res.json(
@@ -101,6 +108,7 @@ export function createApp({
             Object.values(data),
           )
         ).rows[0];
+        // Cadastro e entrada inicial são atômicos; não criar movimento de quantidade zero.
         if (table === "materials" && initial_stock_g > 0) {
           await c.query("UPDATE materials SET stock_g=$1 WHERE id=$2", [
             initial_stock_g,
@@ -143,6 +151,7 @@ export function createApp({
         await transaction(async (c) => {
           const previous = await row(c, table, key);
           let difference = 0;
+          // Comparação sob lock protege reposição/consumo confirmado desde a abertura do formulário.
           if (table === "materials" && data.stock_g !== undefined) {
             if (Number(previous.stock_g) !== expected_stock_g)
               fail(
@@ -199,6 +208,7 @@ export function createApp({
       ).rows,
     );
   });
+  // Reposição soma uma quantidade; ajuste na edição define o saldo total e registra a diferença.
   app.post("/api/stock-entry", async (req, res) => {
     const data = z
       .object({
@@ -267,6 +277,7 @@ export function createApp({
       const previous = await repeated();
       if (previous) return { sale: previous, repeated: true };
       const product = await row(c, "products", data.product_id);
+      // A venda pode ter sido confirmada enquanto aguardávamos o produto: verificar a chave de novo.
       const afterLock = await repeated();
       if (afterLock) return { sale: afterLock, repeated: true };
       if (product.stock_units < data.quantity)
@@ -314,6 +325,7 @@ export function createApp({
         `SELECT om.*,m.brand,m.family,m.color FROM production_order_materials om JOIN materials m ON m.id=om.material_id ORDER BY om.order_id,om.slot`,
       )
     ).rows;
+    // Os itens são a fonte multicor; material_id no cabeçalho só preserva compatibilidade.
     const grouped = new Map();
     for (const line of lines) {
       if (!grouped.has(line.order_id)) grouped.set(line.order_id, []);
@@ -360,6 +372,7 @@ export function createApp({
       data.materials.length
     )
       fail("Selecione cada filamento apenas uma vez.", 400);
+    // Planejar não reserva estoque nem ocupa a impressora; o início exige exclusividade.
     const order = await transaction(async (c) => {
       const printer = await row(c, "printers", data.printer_id);
       if (printer.status !== "disponivel")
@@ -396,6 +409,7 @@ export function createApp({
     });
     res.status(201).json(order);
   });
+  // Remoção física limitada a cancelada sem movimentos: preservar produção já contabilizada.
   app.delete("/api/orders/:id", async (req, res) => {
     const key = id(req.params.id);
     await transaction(async (c) => {
@@ -516,6 +530,7 @@ export function createApp({
               "Os filamentos informados devem corresponder aos da ordem, sem repetições.",
               400,
             );
+          // Uma cor pode ficar sem uso; uma conclusão exige consumo total positivo.
           if (consumed.every((m) => m.actual_g === 0))
             fail(
               "Informe consumo maior que zero em pelo menos um filamento.",
@@ -543,6 +558,7 @@ export function createApp({
                 [material.id, key, -amount],
               );
           }
+          // Entrada de produto ocorre uma vez por ordem, não uma vez para cada cor.
           await c.query(
             "UPDATE products SET stock_units=stock_units+$1 WHERE id=$2",
             [completion.approved_quantity, order.product_id],
@@ -569,6 +585,7 @@ export function createApp({
   const dist = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
   app.use(express.static(dist));
   app.get("/{*path}", (req, res) => res.sendFile(resolve(dist, "index.html")));
+  // Falhas inesperadas ficam no log; a resposta HTTP não expõe detalhes internos do SQL.
   app.use((err, req, res, next) => {
     if (err instanceof z.ZodError)
       return res.status(400).json({

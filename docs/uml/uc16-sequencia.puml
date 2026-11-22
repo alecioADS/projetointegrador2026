@@ -1,0 +1,39 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title UC16 - Concluir produção
+actor Operador
+boundary "Interface React" as UI
+control "API Express" as API
+database "PostgreSQL" as DB
+Operador -> UI: O operador confirma consumos e peças\naprovadas.
+UI -> API: POST /orders/id/finish
+API -> DB: BEGIN; SELECT ordem FOR UPDATE
+API -> API: Validar estado, aprovadas e lista de\nconsumos
+API -> DB: SELECT itens ORDER BY material_id
+loop filamentos em ordem de ID
+ API -> DB: SELECT material FOR UPDATE
+ break saldo insuficiente em qualquer cor
+  API -> DB: ROLLBACK de toda a conclusão
+  API --> UI: 409 sem alterações parciais
+ end
+ API -> DB: Baixar saldo; gravar consumo, custo e\nmovimento
+end
+API -> DB: Somar aprovadas ao produto; registrar\nentrada
+API -> DB: Somar custos; UPDATE ordem concluída;\nCOMMIT
+API --> UI: 200; estoque atualizado e máquina livre
+UI --> Operador: Resultado ou mensagem de impedimento
+@enduml

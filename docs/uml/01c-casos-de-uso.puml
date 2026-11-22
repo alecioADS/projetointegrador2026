@@ -1,0 +1,28 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+left to right direction
+title Casos de uso - Vendas e relatórios
+actor Operador
+rectangle "AVS Labs 3D" {
+usecase "UC18\nRegistrar venda" as UC18
+usecase "UC19\nConsultar vendas e bruto" as UC19
+usecase "UC20\nExportar relatório geral" as UC20
+}
+Operador --> UC18
+Operador --> UC19
+Operador --> UC20
+@enduml

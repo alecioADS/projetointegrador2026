@@ -1,0 +1,75 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title Exemplo ilustrativo após produção e venda
+object "plaAzul:Filamento" as f {
+ id = 1
+ marca = Marca Exemplo
+ material = PLA
+ cor = Azul
+ saldoG = 800.00 
+}
+object "maquina01:Impressora" as p {
+ id = 1
+ codigo = Impressora 01
+ marca = Bambu Lab
+ modelo = A1
+ disponibilidade = Livre 
+}
+object "suporte:Produto" as produto {
+ id = 1
+ sku = SUP-001
+ saldoUnidades = 6 
+}
+object "ordem01:OrdemProducao" as o {
+ id = 1
+ quantidadePlanejada = 10
+ quantidadeAprovada = 8
+ estado = concluida
+ consumoRealG = 200.00
+ custoMaterial = 20.00 
+}
+object "cor1:ItemFilamento" as item {
+ posicao = 1
+ estimadoG = 200.00
+ consumoRealG = 200.00
+ custoMaterial = 20.00 
+}
+object "venda01:Venda" as venda {
+ id = 1
+ quantidade = 2
+ canal = marketplace
+ precoUnitario = 25.00
+ totalBruto = 50.00 
+}
+object "consumo:Movimentacao" as mov {
+ quantidade = -200.00
+ alvo = filamento 1
+ ordem = 1 
+}
+p -- o
+produto -- o
+o *-- item
+f -- item
+produto -- venda
+o -- mov
+f -- mov
+note bottom
+ Cenário didático, não dados reais da empresa.
+ Entrada inicial: 1.000 g. Produção: +8 unidades.
+ Venda: -2 unidades. Saldo final: 6 unidades.
+end note
+@enduml

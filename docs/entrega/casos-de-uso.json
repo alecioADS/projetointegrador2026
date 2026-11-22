@@ -1,0 +1,464 @@
+[
+  {
+    "id": "UC01",
+    "title": "Cadastrar filamento",
+    "api": "POST /api/materials",
+    "trigger": "O operador envia o novo filamento.",
+    "inputs": "Marca, material, cor, custo por kg e saldo inicial em gramas.",
+    "pre": "Aplicativo e banco disponíveis; saldo inicial não negativo, com até duas casas decimais.",
+    "post": "Cadastro criado; saldo inicial positivo gera uma entrada de estoque vinculada.",
+    "steps": [
+      "Abrir Materiais e acionar Novo cadastro.",
+      "Informar separadamente marca, material e cor; informar custo/kg e saldo inicial.",
+      "A interface converte os campos numéricos e envia JSON.",
+      "A API valida campos, abre transação e insere o cadastro.",
+      "Se o saldo inicial for maior que zero, atualizar o saldo e inserir a entrada inicial.",
+      "Confirmar a transação e exibir cadastro atualizado."
+    ],
+    "alternatives": [
+      "Saldo inicial zero é aceito sem movimento.",
+      "Campos vazios, valor negativo ou precisão superior a centésimos retornam 400.",
+      "Falha na entrada inicial reverte também o cadastro."
+    ],
+    "db": "materials; stock_movements",
+    "sequence": "UI -> API: POST /materials com saldo inicial\nAPI -> API: Validar dados com Zod\nalt dados válidos\n API -> DB: BEGIN; INSERT materials\n opt saldo inicial > 0\n  API -> DB: UPDATE stock_g; INSERT stock_movements\n end\n API -> DB: COMMIT\n API --> UI: 201 e cadastro\nelse dados inválidos\n API --> UI: 400 e mensagem\nend"
+  },
+  {
+    "id": "UC02",
+    "title": "Consultar filamentos",
+    "api": "GET /api/materials",
+    "trigger": "O operador abre Materiais ou pesquisa.",
+    "inputs": "Texto de busca opcional, aplicado na interface.",
+    "pre": "Banco disponível.",
+    "post": "Cadastros e saldos exibidos sem alteração de dados.",
+    "steps": [
+      "Abrir a seção Materiais.",
+      "Solicitar a lista de filamentos à API.",
+      "Consultar todos os registros ordenados pelo ID decrescente.",
+      "Exibir marca, material/cor, saldo e custo/kg.",
+      "Filtrar localmente os registros conforme a busca."
+    ],
+    "alternatives": [
+      "Sem cadastros, mostrar estado vazio.",
+      "Busca sem correspondência não altera o banco.",
+      "Falha de conexão deve ser exibida na interface."
+    ],
+    "db": "materials",
+    "sequence": "UI -> API: GET /materials\nAPI -> DB: SELECT materials ORDER BY id DESC\nDB --> API: Cadastros e saldos\nAPI --> UI: 200 e lista\nUI -> UI: Aplicar busca local e renderizar"
+  },
+  {
+    "id": "UC03",
+    "title": "Alterar filamento e ajustar saldo",
+    "api": "PUT /api/materials/:id",
+    "trigger": "O operador salva a edição.",
+    "inputs": "ID, dados cadastrais e, se ajustar, stock_g e expected_stock_g.",
+    "pre": "Registro existente; valores válidos; saldo anterior ainda corresponde ao banco.",
+    "post": "Cadastro atualizado; diferença de saldo registrada sem apagar movimentos anteriores.",
+    "steps": [
+      "Abrir Editar e carregar o saldo atual como referência.",
+      "Alterar os dados e, se necessário, o saldo total disponível.",
+      "Enviar JSON com o saldo anterior exibido.",
+      "Abrir transação e bloquear o filamento com SELECT FOR UPDATE.",
+      "Comparar expected_stock_g com o saldo atual; calcular a diferença em centésimos.",
+      "Atualizar o cadastro e registrar movimento somente se a diferença for distinta de zero.",
+      "Confirmar e atualizar a tela."
+    ],
+    "alternatives": [
+      "Registro inexistente retorna 404.",
+      "Saldo mudou durante a edição: retornar 409 e solicitar reabertura.",
+      "Saldo negativo ou falta da referência anterior ao ajustar: retornar 400.",
+      "Salvar sem mudar o saldo não cria movimento."
+    ],
+    "db": "materials; stock_movements",
+    "sequence": "UI -> API: PUT /materials/id com saldo esperado\nAPI -> API: Validar dados\nAPI -> DB: BEGIN; SELECT materials FOR UPDATE\nDB --> API: Cadastro e saldo atual\nalt saldo esperado confere\n API -> DB: UPDATE materials\n opt diferença de saldo != 0\n  API -> DB: INSERT stock_movements com diferença\n end\n API -> DB: COMMIT\n API --> UI: 200 e cadastro\nelse saldo desatualizado\n API -> DB: ROLLBACK\n API --> UI: 409; reabrir cadastro\nend"
+  },
+  {
+    "id": "UC04",
+    "title": "Cadastrar impressora",
+    "api": "POST /api/printers",
+    "trigger": "O operador envia o cadastro da máquina.",
+    "inputs": "Código, marca, modelo e situação disponível/manutenção.",
+    "pre": "Código não utilizado, inclusive com diferença apenas de caixa.",
+    "post": "Máquina identificada por código único.",
+    "steps": [
+      "Abrir Impressoras e Novo cadastro.",
+      "Preencher código da unidade, marca, modelo e situação.",
+      "Validar os campos e inserir em transação.",
+      "Confirmar e retornar a nova impressora."
+    ],
+    "alternatives": [
+      "Código duplicado retorna 409.",
+      "Campos vazios ou situação inválida retornam 400."
+    ],
+    "db": "printers",
+    "sequence": "UI -> API: POST /printers\nAPI -> API: Validar código, marca, modelo e situação\nAPI -> DB: BEGIN; INSERT printers\nalt código único\n API -> DB: COMMIT\n API --> UI: 201 e impressora\nelse código repetido\n API -> DB: ROLLBACK\n API --> UI: 409\nend"
+  },
+  {
+    "id": "UC05",
+    "title": "Consultar impressoras",
+    "api": "GET /api/printers",
+    "trigger": "O operador abre Impressoras.",
+    "inputs": "Busca local opcional.",
+    "pre": "Banco disponível.",
+    "post": "Exibição de Livre, Ocupada ou Manutenção.",
+    "steps": [
+      "Consultar cadastros de impressoras.",
+      "Verificar se há ordem em_producao vinculada a cada máquina.",
+      "Se o cadastro estiver em manutenção, apresentar Manutenção; caso contrário, Ocupada quando houver ordem em execução e Livre nos demais casos.",
+      "Exibir e permitir busca por código, marca e modelo."
+    ],
+    "alternatives": [
+      "Impressora planejada, sem execução, continua livre.",
+      "A disponibilidade é calculada na consulta; não é uma coluna gravada."
+    ],
+    "db": "printers; production_orders",
+    "sequence": "UI -> API: GET /printers\nAPI -> DB: SELECT printers + EXISTS ordem em_producao\nDB --> API: Cadastro e disponibilidade derivada\nAPI --> UI: 200 e lista\nUI -> UI: Exibir Livre/Ocupada/Manutenção"
+  },
+  {
+    "id": "UC06",
+    "title": "Alterar impressora",
+    "api": "PUT /api/printers/:id",
+    "trigger": "O operador salva a edição da máquina.",
+    "inputs": "Código, marca, modelo e situação.",
+    "pre": "Impressora existente e código único.",
+    "post": "Dados atualizados; histórico de ordens mantém o mesmo ID.",
+    "steps": [
+      "Abrir a edição da impressora.",
+      "Enviar os dados alterados.",
+      "Bloquear o cadastro na transação.",
+      "Se a nova situação for manutenção, consultar se há produção ativa.",
+      "Atualizar e confirmar quando não houver impedimento."
+    ],
+    "alternatives": [
+      "Não é permitido colocar em manutenção uma impressora com produção ativa: 409.",
+      "Código duplicado: 409.",
+      "Não encontrada: 404."
+    ],
+    "db": "printers; production_orders",
+    "sequence": "UI -> API: PUT /printers/id\nAPI -> DB: BEGIN; SELECT printers FOR UPDATE\nopt nova situação = manutencao\n API -> DB: Consultar ordem em_producao\nend\nalt alteração permitida\n API -> DB: UPDATE printers; COMMIT\n API --> UI: 200\nelse máquina ocupada ou código duplicado\n API -> DB: ROLLBACK\n API --> UI: 409\nend"
+  },
+  {
+    "id": "UC07",
+    "title": "Cadastrar produto",
+    "api": "POST /api/products",
+    "trigger": "O operador envia um novo produto.",
+    "inputs": "Nome e SKU.",
+    "pre": "SKU único e campos não vazios.",
+    "post": "Produto criado com estoque zero.",
+    "steps": [
+      "Abrir Produtos e Novo cadastro.",
+      "Informar nome e SKU.",
+      "Validar e inserir o produto em transação.",
+      "Confirmar cadastro com stock_units igual a zero."
+    ],
+    "alternatives": [
+      "SKU duplicado retorna 409.",
+      "O saldo de produto entra pela conclusão de produção, não por saldo inicial neste cadastro."
+    ],
+    "db": "products",
+    "sequence": "UI -> API: POST /products\nAPI -> API: Validar nome e SKU\nAPI -> DB: BEGIN; INSERT products com stock_units=0\nalt SKU único\n API -> DB: COMMIT\n API --> UI: 201 e produto\nelse SKU duplicado\n API -> DB: ROLLBACK\n API --> UI: 409\nend"
+  },
+  {
+    "id": "UC08",
+    "title": "Consultar produtos",
+    "api": "GET /api/products",
+    "trigger": "O operador abre Produtos.",
+    "inputs": "Busca local opcional.",
+    "pre": "Banco disponível.",
+    "post": "Lista de produtos e estoque disponível em unidades.",
+    "steps": [
+      "Solicitar a lista de produtos.",
+      "Consultar cadastros ordenados pelo ID.",
+      "Exibir nome, SKU e stock_units.",
+      "Aplicar filtro local quando houver busca."
+    ],
+    "alternatives": [
+      "Estoque zero é exibido, mas o produto não aparece como opção de venda disponível."
+    ],
+    "db": "products",
+    "sequence": "UI -> API: GET /products\nAPI -> DB: SELECT products ORDER BY id DESC\nDB --> API: Produtos e unidades disponíveis\nAPI --> UI: 200 e lista\nUI -> UI: Filtrar localmente"
+  },
+  {
+    "id": "UC09",
+    "title": "Alterar produto",
+    "api": "PUT /api/products/:id",
+    "trigger": "O operador salva uma alteração de nome ou SKU.",
+    "inputs": "Nome e SKU.",
+    "pre": "Produto existente; SKU único.",
+    "post": "Dados atualizados sem mudar o saldo.",
+    "steps": [
+      "Abrir Editar em Produtos.",
+      "Modificar nome ou SKU.",
+      "Validar e bloquear o registro.",
+      "Atualizar somente os campos permitidos.",
+      "Confirmar e atualizar a lista."
+    ],
+    "alternatives": [
+      "Enviar stock_units na edição é rejeitado pelo contrato estrito.",
+      "SKU duplicado retorna 409; ID inexistente retorna 404."
+    ],
+    "db": "products",
+    "sequence": "UI -> API: PUT /products/id\nAPI -> API: Validar somente nome e SKU\nAPI -> DB: BEGIN; SELECT products FOR UPDATE\nAPI -> DB: UPDATE nome e SKU; COMMIT\nAPI --> UI: 200 e cadastro sem alterar saldo"
+  },
+  {
+    "id": "UC10",
+    "title": "Excluir registro sem histórico impeditivo",
+    "api": "DELETE /api/{materials|printers|products}/:id; DELETE /api/orders/:id",
+    "trigger": "O operador confirma a exclusão.",
+    "inputs": "Tipo de registro e ID.",
+    "pre": "Cadastro sem vínculos; para ordem, estado cancelada e ausência de movimentos.",
+    "post": "Registro removido; exclusão de ordem remove também seus itens de filamento.",
+    "steps": [
+      "Acionar Excluir no cadastro ou Apagar em uma ordem cancelada.",
+      "Apresentar a confirmação e permitir Voltar.",
+      "Confirmar o tipo de recurso e o ID.",
+      "Em cadastro, executar DELETE e deixar as chaves estrangeiras impedirem remoção com vínculos.",
+      "Em ordem, abrir transação, bloquear a ordem, validar o cancelamento e ausência de movimentos, remover os itens e a ordem.",
+      "Retornar 204 e atualizar a lista."
+    ],
+    "alternatives": [
+      "Voltar não exclui dados.",
+      "Vínculos ou situação incompatível retornam 409.",
+      "ID inexistente retorna 404.",
+      "Vendas e movimentações não possuem exclusão na interface."
+    ],
+    "db": "materials/printers/products ou production_orders + production_order_materials",
+    "sequence": "UI -> UI: Solicitar confirmação de exclusão\nalt operador confirma\n UI -> API: DELETE /recurso/id\n alt cadastro\n  API -> DB: DELETE validado por chaves estrangeiras\n else ordem cancelada\n  API -> DB: BEGIN; bloquear ordem; verificar movimentos\n  API -> DB: DELETE itens; DELETE ordem; COMMIT\n end\n API --> UI: 204, ou 409 se houver impedimento\nelse Voltar\n UI -> UI: Fechar sem alterar dados\nend"
+  },
+  {
+    "id": "UC11",
+    "title": "Registrar entrada de filamento",
+    "api": "POST /api/stock-entry",
+    "trigger": "O operador confirma uma reposição.",
+    "inputs": "ID do filamento, quantidade positiva em gramas e motivo.",
+    "pre": "Filamento existente; quantidade até 10.000.000 g, com duas casas.",
+    "post": "Saldo acrescido e entrada registrada na mesma transação.",
+    "steps": [
+      "Abrir Entrada de estoque.",
+      "Selecionar o filamento identificado por marca/material/cor.",
+      "Informar quantidade e motivo.",
+      "Bloquear o cadastro em transação.",
+      "Somar a quantidade ao saldo e inserir movimento positivo.",
+      "Confirmar e atualizar as telas."
+    ],
+    "alternatives": [
+      "Quantidade zero/negativa ou motivo vazio retorna 400.",
+      "Reenvio desta entrada não possui chave de idempotência própria."
+    ],
+    "db": "materials; stock_movements",
+    "sequence": "UI -> API: POST /stock-entry\nAPI -> API: Validar quantidade e motivo\nAPI -> DB: BEGIN; SELECT materials FOR UPDATE\nAPI -> DB: UPDATE stock_g = stock_g + quantidade\nAPI -> DB: INSERT movimento positivo; COMMIT\nAPI --> UI: 201 e entrada"
+  },
+  {
+    "id": "UC12",
+    "title": "Consultar movimentações",
+    "api": "GET /api/movements",
+    "trigger": "O operador abre Movimentações.",
+    "inputs": "Busca local opcional.",
+    "pre": "Banco disponível.",
+    "post": "Histórico de entradas, ajustes, produção e vendas exibido.",
+    "steps": [
+      "Consultar movimentos em ordem decrescente de ID.",
+      "Juntar a descrição do filamento ou produto.",
+      "Exibir quantidade positiva/negativa, motivo, data e referência de ordem ou venda.",
+      "Permitir busca sem alterar registros."
+    ],
+    "alternatives": [
+      "Movimento de filamento usa gramas; de produto, unidades.",
+      "Registro não pode referenciar simultaneamente filamento e produto."
+    ],
+    "db": "stock_movements; materials; products",
+    "sequence": "UI -> API: GET /movements\nAPI -> DB: SELECT movimentos + descrições\nDB --> API: Entradas e saídas com referências\nAPI --> UI: 200 e lista\nUI -> UI: Exibir unidade conforme o alvo"
+  },
+  {
+    "id": "UC13",
+    "title": "Planejar produção",
+    "api": "POST /api/orders",
+    "trigger": "O operador envia uma nova ordem.",
+    "inputs": "Produto, impressora, quantidade de peças e 1 a 4 pares filamento/consumo estimado.",
+    "pre": "Produto e filamentos existentes; impressora livre e fora de manutenção.",
+    "post": "Ordem planejada, itens gravados e estoques preservados.",
+    "steps": [
+      "Abrir Nova ordem e selecionar produto.",
+      "Selecionar marca/modelo de impressora e uma unidade livre pelo código.",
+      "Informar quantidade de peças.",
+      "Para cada filamento, selecionar separadamente marca, material e cor e informar consumo estimado.",
+      "Validar de um a quatro filamentos distintos.",
+      "Bloquear a impressora, conferir disponibilidade, inserir ordem e itens.",
+      "Confirmar o planejamento; a impressora só passa a ocupada no início efetivo."
+    ],
+    "alternatives": [
+      "Filamento repetido, zero ou mais de quatro itens retornam 400.",
+      "Impressora ocupada/manutenção retorna 409.",
+      "Não há reserva nem baixa de filamento no planejamento."
+    ],
+    "db": "production_orders; production_order_materials; printers",
+    "sequence": "UI -> UI: Selecionar modelo, unidade e até 4 filamentos\nUI -> API: POST /orders com materials[]\nAPI -> API: Validar lista e impedir IDs repetidos\nAPI -> DB: BEGIN; bloquear impressora; verificar disponibilidade\nalt impressora livre\n API -> DB: INSERT production_orders\n loop cada filamento, máximo 4\n  API -> DB: INSERT production_order_materials\n end\n API -> DB: COMMIT\n API --> UI: 201 e ordem planejada\nelse ocupada ou manutenção\n API -> DB: ROLLBACK\n API --> UI: 409\nend"
+  },
+  {
+    "id": "UC14",
+    "title": "Consultar ordens",
+    "api": "GET /api/orders",
+    "trigger": "O operador abre Produção ou busca uma ordem.",
+    "inputs": "Busca local opcional.",
+    "pre": "Banco disponível.",
+    "post": "Ordens com impressora, itens, quantidades, custos e estados.",
+    "steps": [
+      "Consultar ordens com produto e impressora.",
+      "Consultar os itens dos filamentos.",
+      "Agrupar itens por order_id na API.",
+      "Exibir os filamentos de cada ordem, consumo estimado/real e custo total quando concluída.",
+      "Mostrar ações conforme o estado."
+    ],
+    "alternatives": [
+      "Ordem planejada oferece Iniciar e Cancelar; em produção oferece Concluir; cancelada oferece Apagar.",
+      "Os dois SELECTs desta consulta não usam snapshot comum; a exportação é a alternativa com leitura consistente."
+    ],
+    "db": "production_orders; production_order_materials; materials; products; printers",
+    "sequence": "UI -> API: GET /orders\nAPI -> DB: SELECT ordens + produtos + impressoras\nDB --> API: Ordens\nAPI -> DB: SELECT itens + filamentos\nDB --> API: Consumos e cores\nAPI -> API: Agrupar por order_id\nAPI --> UI: 200 e ordens com materials[]"
+  },
+  {
+    "id": "UC15",
+    "title": "Iniciar produção",
+    "api": "POST /api/orders/:id/start",
+    "trigger": "O operador aciona Iniciar.",
+    "inputs": "ID da ordem.",
+    "pre": "Estado planejada e impressora disponível, sem outra ordem em produção.",
+    "post": "Estado em_producao; disponibilidade calculada como Ocupada.",
+    "steps": [
+      "Acionar Iniciar na ordem planejada.",
+      "Abrir transação e bloquear a ordem.",
+      "Bloquear a impressora e consultar ordens em execução.",
+      "Alterar a ordem para em_producao.",
+      "Confirmar e recalcular disponibilidade na atualização da tela."
+    ],
+    "alternatives": [
+      "Ordem não planejada ou impressora indisponível retorna 409.",
+      "Índice parcial único também impede duas ordens em execução na mesma impressora.",
+      "A operação não altera estoque."
+    ],
+    "db": "production_orders; printers",
+    "sequence": "UI -> API: POST /orders/id/start\nAPI -> DB: BEGIN; bloquear ordem\nAPI -> API: Exigir estado planejada\nAPI -> DB: Bloquear impressora; consultar execução ativa\nalt livre e fora de manutenção\n API -> DB: UPDATE estado=em_producao; COMMIT\n API --> UI: 200; impressora ocupada na consulta\nelse impedimento\n API -> DB: ROLLBACK\n API --> UI: 409\nend"
+  },
+  {
+    "id": "UC16",
+    "title": "Concluir produção",
+    "api": "POST /api/orders/:id/finish",
+    "trigger": "O operador confirma consumos e peças aprovadas.",
+    "inputs": "ID, quantidade aprovada e consumo real de todos os filamentos da ordem.",
+    "pre": "Ordem em_producao; aprovadas entre zero e planejadas; ao menos um consumo positivo; saldo suficiente em todas as cores.",
+    "post": "Consumos, custos, produto e movimentos confirmados uma única vez; impressora liberada.",
+    "steps": [
+      "Abrir Concluir e informar o consumo real por filamento e peças aprovadas.",
+      "Bloquear a ordem e validar estado e composição exata dos filamentos.",
+      "Bloquear os filamentos em ordem crescente de ID para reduzir risco de deadlock.",
+      "Para cada cor, validar saldo, descontar consumo, gravar custo e movimento negativo quando houver consumo.",
+      "Acrescentar as peças aprovadas ao produto e criar entrada somente se a quantidade for positiva.",
+      "Somar consumos e custos dos itens, marcar concluída e gravar finished_at.",
+      "Confirmar tudo em uma transação; recalcular a disponibilidade da impressora."
+    ],
+    "alternatives": [
+      "Se qualquer saldo for insuficiente, reverter todos os itens: 409.",
+      "Quantidade aprovada maior que planejada ou composição incorreta retorna 400.",
+      "Falha total usa zero aprovadas e consumo positivo.",
+      "Segunda conclusão retorna 409 e não duplica estoque."
+    ],
+    "db": "production_orders; production_order_materials; materials; products; stock_movements",
+    "sequence": "UI -> API: POST /orders/id/finish\nAPI -> DB: BEGIN; SELECT ordem FOR UPDATE\nAPI -> API: Validar estado, aprovadas e lista de consumos\nAPI -> DB: SELECT itens ORDER BY material_id\nloop filamentos em ordem de ID\n API -> DB: SELECT material FOR UPDATE\n break saldo insuficiente em qualquer cor\n  API -> DB: ROLLBACK de toda a conclusão\n  API --> UI: 409 sem alterações parciais\n end\n API -> DB: Baixar saldo; gravar consumo, custo e movimento\nend\nAPI -> DB: Somar aprovadas ao produto; registrar entrada\nAPI -> DB: Somar custos; UPDATE ordem concluída; COMMIT\nAPI --> UI: 200; estoque atualizado e máquina livre"
+  },
+  {
+    "id": "UC17",
+    "title": "Cancelar planejamento",
+    "api": "POST /api/orders/:id/cancel",
+    "trigger": "O operador confirma o cancelamento.",
+    "inputs": "ID da ordem planejada.",
+    "pre": "Ordem existente e ainda planejada.",
+    "post": "Ordem cancelada com data de encerramento, sem movimentar estoque.",
+    "steps": [
+      "Acionar Cancelar e ler a confirmação.",
+      "Confirmar ou voltar.",
+      "Bloquear a ordem na transação.",
+      "Exigir estado planejada.",
+      "Gravar estado cancelada e finished_at e confirmar."
+    ],
+    "alternatives": [
+      "Em produção ou concluída não pode ser cancelada: 409.",
+      "Falha de impressão iniciada é registrada pela conclusão, inclusive com zero aprovadas."
+    ],
+    "db": "production_orders",
+    "sequence": "UI -> UI: Pedir confirmação\nUI -> API: POST /orders/id/cancel\nAPI -> DB: BEGIN; SELECT ordem FOR UPDATE\nalt estado planejada\n API -> DB: UPDATE cancelada, finished_at; COMMIT\n API --> UI: 200 sem alterar estoque\nelse produção já iniciada ou encerrada\n API -> DB: ROLLBACK\n API --> UI: 409\nend"
+  },
+  {
+    "id": "UC18",
+    "title": "Registrar venda",
+    "api": "POST /api/sales",
+    "trigger": "O operador envia uma venda.",
+    "inputs": "UUID da operação, produto, quantidade inteira, canal e preço unitário positivo.",
+    "pre": "Produto existente e saldo suficiente; canal marketplace ou varejo.",
+    "post": "Venda e saída de estoque confirmadas; total bruto calculado no banco.",
+    "steps": [
+      "Abrir Vendas e Registrar venda.",
+      "Selecionar produto com estoque, quantidade, canal e preço unitário.",
+      "A interface exibe o total e gera request_id para aquela abertura do formulário.",
+      "Validar o JSON e consultar eventual venda com a mesma chave.",
+      "Bloquear o produto e repetir a consulta da chave depois do bloqueio.",
+      "Exigir saldo suficiente; inserir venda, baixar produto e gravar movimento com sale_id.",
+      "Confirmar e atualizar lista e faturamento bruto."
+    ],
+    "alternatives": [
+      "Reenvio com mesma chave e dados retorna a venda existente com 200 sem nova baixa.",
+      "Chave reutilizada com dados diferentes retorna 409.",
+      "Saldo insuficiente retorna 409 sem venda parcial.",
+      "Quantidade/preço/canal inválidos retornam 400."
+    ],
+    "db": "sales; products; stock_movements",
+    "sequence": "UI -> API: POST /sales com request_id\nAPI -> API: Validar produto, quantidade, canal e preço\nAPI -> DB: BEGIN; consultar request_id\nalt operação já registrada\n API -> DB: COMMIT sem nova escrita\n API --> UI: 200 com venda existente\nelse operação ainda não registrada\n API -> DB: SELECT produto FOR UPDATE\n API -> DB: Reconsultar request_id após bloqueio\n alt registrada enquanto aguardava\n  API -> DB: COMMIT sem nova escrita\n  API --> UI: 200 com venda existente\n else operação nova\n  break saldo insuficiente\n   API -> DB: ROLLBACK\n   API --> UI: 409\n  end\n  API -> DB: INSERT sales (total gerado pelo banco)\n  API -> DB: Baixar produto; INSERT movimento; COMMIT\n  API --> UI: 201 e venda\n end\nend"
+  },
+  {
+    "id": "UC19",
+    "title": "Consultar vendas e bruto",
+    "api": "GET /api/sales",
+    "trigger": "O operador abre Vendas ou usa a busca.",
+    "inputs": "Busca local opcional.",
+    "pre": "Banco disponível.",
+    "post": "Histórico de vendas e bruto acumulado por canal exibidos.",
+    "steps": [
+      "Solicitar vendas com descrição do produto e SKU.",
+      "Exibir data, canal, quantidade, preço unitário e total bruto.",
+      "Somar valores em centavos na interface para indicadores gerais e por canal.",
+      "Somar unidades vendidas.",
+      "Filtrar a tabela localmente; os indicadores permanecem acumulados sobre todas as vendas."
+    ],
+    "alternatives": [
+      "Não há dedução de taxa, custo, despesa ou cálculo de lucro.",
+      "Sem vendas, indicadores ficam em zero e a tabela informa ausência de registros."
+    ],
+    "db": "sales; products",
+    "sequence": "UI -> API: GET /sales\nAPI -> DB: SELECT sales JOIN products ORDER BY id DESC\nDB --> API: Vendas, preços e totais gerados\nAPI --> UI: 200 e lista\nUI -> UI: Somar centavos por canal e unidades\nUI -> UI: Aplicar busca somente à tabela"
+  },
+  {
+    "id": "UC20",
+    "title": "Exportar relatório geral",
+    "api": "GET /api/reports/export",
+    "trigger": "O operador aciona Exportar relatórios (CSV).",
+    "inputs": "Nenhum filtro: exportação completa.",
+    "pre": "Banco disponível; navegador permite download.",
+    "post": "ZIP com oito CSVs e LEIA-ME baixado, sem alterar o banco.",
+    "steps": [
+      "Acionar o botão disponível em todas as seções.",
+      "Abrir transação de leitura com REPEATABLE READ READ ONLY.",
+      "Consultar visão geral e sete conjuntos de dados, incluindo consumos detalhados.",
+      "Codificar CSV em UTF-8 com BOM, ponto e vírgula e vírgula decimal.",
+      "Escapar aspas e proteger campos textuais com prefixo de fórmula.",
+      "Gerar ZIP e retornar com Content-Disposition e Cache-Control no-store.",
+      "Criar download no navegador e liberar a URL temporária posteriormente."
+    ],
+    "alternatives": [
+      "CSV não contém abas: cada seção é um arquivo no ZIP.",
+      "A busca da tela não limita a exportação.",
+      "Falha retorna mensagem sem alterar dados.",
+      "Datas em ISO 8601 UTC; dados vazios continuam vazios."
+    ],
+    "db": "Todas as sete tabelas, em leitura consistente",
+    "sequence": "UI -> API: GET /reports/export\nAPI -> DB: BEGIN; SET TRANSACTION REPEATABLE READ READ ONLY\nAPI -> DB: Consultar indicadores e todas as seções\nDB --> API: Snapshot dos registros\nAPI -> DB: COMMIT\nAPI -> API: Serializar 8 CSVs; escapar campos; gerar ZIP\nAPI --> UI: 200 application/zip + attachment\nUI -> UI: Baixar arquivo e informar sucesso"
+  }
+]

@@ -1,7 +1,9 @@
+/** O relatório é somente leitura: oito CSVs completos no mesmo snapshot de dados. */
 import { zipSync, strToU8 } from "fflate";
 
 // Separador e vírgula decimal usados em planilhas configuradas em português.
 // Campos textuais são neutralizados para que cadastros não virem fórmulas.
+/** Tipos numéricos preservam saídas negativas; proteção de fórmula é apenas textual. */
 export function csv(columns, rows) {
   const cell = (value, type = "text") => {
     let text =

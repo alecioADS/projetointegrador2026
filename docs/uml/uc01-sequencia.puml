@@ -1,0 +1,36 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title UC01 - Cadastrar filamento
+actor Operador
+boundary "Interface React" as UI
+control "API Express" as API
+database "PostgreSQL" as DB
+Operador -> UI: O operador envia o novo filamento.
+UI -> API: POST /materials com saldo inicial
+API -> API: Validar dados com Zod
+alt dados válidos
+ API -> DB: BEGIN; INSERT materials
+ opt saldo inicial > 0
+  API -> DB: UPDATE stock_g; INSERT stock_movements
+ end
+ API -> DB: COMMIT
+ API --> UI: 201 e cadastro
+else dados inválidos
+ API --> UI: 400 e mensagem
+end
+UI --> Operador: Resultado ou mensagem de impedimento
+@enduml

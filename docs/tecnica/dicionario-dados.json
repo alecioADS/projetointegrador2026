@@ -1,0 +1,310 @@
+{
+  "materials": [
+    [
+      "id",
+      "integer identity PK",
+      "Não",
+      "Identificador interno do filamento."
+    ],
+    [
+      "brand",
+      "varchar(120)",
+      "Não",
+      "Marca informada no cadastro."
+    ],
+    [
+      "family",
+      "varchar(40)",
+      "Não",
+      "Material/tipo: PLA, PETG, TPU etc.; não é enum fechado."
+    ],
+    [
+      "color",
+      "varchar(60)",
+      "Não",
+      "Cor descritiva do filamento."
+    ],
+    [
+      "stock_g",
+      "numeric(12,2), default 0",
+      "Não",
+      "Saldo persistido em gramas, nunca negativo."
+    ],
+    [
+      "cost_per_kg",
+      "numeric(12,2), default 0",
+      "Não",
+      "Custo por kg vigente no cadastro, não negativo."
+    ]
+  ],
+  "printers": [
+    [
+      "id",
+      "integer identity PK",
+      "Não",
+      "Identificador interno da máquina."
+    ],
+    [
+      "code",
+      "varchar(120)",
+      "Não",
+      "Código da unidade; índice único sobre lower(trim(code))."
+    ],
+    [
+      "brand",
+      "varchar(120)",
+      "Não",
+      "Marca da impressora; legado pode conter Não informada."
+    ],
+    [
+      "model",
+      "varchar(120)",
+      "Não",
+      "Modelo da impressora."
+    ],
+    [
+      "status",
+      "varchar(20), default disponivel",
+      "Não",
+      "Disponivel ou manutencao na grafia técnica minúscula definida no CHECK."
+    ]
+  ],
+  "products": [
+    [
+      "id",
+      "integer identity PK",
+      "Não",
+      "Identificador interno do produto."
+    ],
+    [
+      "name",
+      "varchar(120)",
+      "Não",
+      "Nome do produto."
+    ],
+    [
+      "sku",
+      "varchar(60), UNIQUE",
+      "Não",
+      "Código comercial do produto, único com comparação padrão do banco."
+    ],
+    [
+      "stock_units",
+      "integer, default 0",
+      "Não",
+      "Estoque em unidades inteiras, não negativo."
+    ]
+  ],
+  "production_orders": [
+    [
+      "id",
+      "integer identity PK",
+      "Não",
+      "Identificador da ordem."
+    ],
+    [
+      "product_id",
+      "integer FK products",
+      "Não",
+      "Produto gerado pela ordem."
+    ],
+    [
+      "printer_id",
+      "integer FK printers",
+      "Não",
+      "Unidade de impressora escolhida."
+    ],
+    [
+      "material_id",
+      "integer FK materials",
+      "Não",
+      "Referência legada ao primeiro filamento; não substitui a coleção de itens."
+    ],
+    [
+      "quantity",
+      "integer",
+      "Não",
+      "Quantidade planejada de peças, maior que zero."
+    ],
+    [
+      "planned_g",
+      "numeric(12,2)",
+      "Não",
+      "Soma do consumo estimado dos itens."
+    ],
+    [
+      "actual_g",
+      "numeric(12,2)",
+      "Sim",
+      "Soma do consumo real; preenchida na conclusão."
+    ],
+    [
+      "approved_quantity",
+      "integer",
+      "Sim",
+      "Peças aprovadas, entre zero e quantity quando concluída."
+    ],
+    [
+      "material_cost",
+      "numeric(12,2)",
+      "Sim",
+      "Soma dos custos dos itens; snapshot da conclusão."
+    ],
+    [
+      "status",
+      "varchar(20), default planejada",
+      "Não",
+      "planejada, em_producao, concluida ou cancelada."
+    ],
+    [
+      "created_at",
+      "timestamptz, default now()",
+      "Não",
+      "Instante de criação definido no servidor de banco."
+    ],
+    [
+      "finished_at",
+      "timestamptz",
+      "Sim",
+      "Instante da conclusão ou do cancelamento."
+    ]
+  ],
+  "production_order_materials": [
+    [
+      "order_id",
+      "integer PK parcial, FK production_orders",
+      "Não",
+      "Ordem proprietária do item."
+    ],
+    [
+      "slot",
+      "smallint PK parcial",
+      "Não",
+      "Posição 1, 2, 3 ou 4."
+    ],
+    [
+      "material_id",
+      "integer FK materials",
+      "Não",
+      "Cadastro de filamento; combinação order_id/material_id é única."
+    ],
+    [
+      "planned_g",
+      "numeric(12,2)",
+      "Não",
+      "Consumo estimado positivo deste filamento."
+    ],
+    [
+      "actual_g",
+      "numeric(12,2)",
+      "Sim",
+      "Consumo real não negativo; zero se a cor não foi usada."
+    ],
+    [
+      "material_cost",
+      "numeric(12,2)",
+      "Sim",
+      "Custo calculado e arredondado por item na conclusão."
+    ]
+  ],
+  "stock_movements": [
+    [
+      "id",
+      "integer identity PK",
+      "Não",
+      "Identificador do lançamento."
+    ],
+    [
+      "material_id",
+      "integer FK materials",
+      "Sim",
+      "Alvo filamento; obrigatório quando product_id for nulo."
+    ],
+    [
+      "product_id",
+      "integer FK products",
+      "Sim",
+      "Alvo produto; obrigatório quando material_id for nulo."
+    ],
+    [
+      "order_id",
+      "integer FK production_orders",
+      "Sim",
+      "Ordem que originou consumo/produção."
+    ],
+    [
+      "sale_id",
+      "integer FK sales",
+      "Sim",
+      "Venda que originou a saída de produto."
+    ],
+    [
+      "quantity",
+      "numeric(12,2)",
+      "Não",
+      "Quantidade com sinal e diferente de zero: g para filamento ou un. para produto."
+    ],
+    [
+      "reason",
+      "varchar(200)",
+      "Não",
+      "Descrição da origem: saldo inicial, ajuste, entrada, produção ou venda."
+    ],
+    [
+      "created_at",
+      "timestamptz, default now()",
+      "Não",
+      "Instante do lançamento definido no banco."
+    ]
+  ],
+  "sales": [
+    [
+      "id",
+      "integer identity PK",
+      "Não",
+      "Identificador da venda."
+    ],
+    [
+      "request_id",
+      "uuid UNIQUE",
+      "Não",
+      "Identifica a tentativa de registro para proteção contra reenvio."
+    ],
+    [
+      "product_id",
+      "integer FK products",
+      "Não",
+      "Produto vendido."
+    ],
+    [
+      "quantity",
+      "integer",
+      "Não",
+      "Unidades vendidas, maior que zero."
+    ],
+    [
+      "channel",
+      "varchar(20)",
+      "Não",
+      "marketplace ou varejo."
+    ],
+    [
+      "unit_price",
+      "numeric(12,2)",
+      "Não",
+      "Preço unitário positivo."
+    ],
+    [
+      "total_amount",
+      "numeric(18,2), GENERATED STORED",
+      "Derivado",
+      "Resultado de quantity * unit_price calculado pelo banco."
+    ],
+    [
+      "created_at",
+      "timestamptz, default now()",
+      "Não",
+      "Instante de registro da venda."
+    ]
+  ]
+}

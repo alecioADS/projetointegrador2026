@@ -1,0 +1,377 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/health",
+    "body": null,
+    "response": {
+      "ok": true
+    },
+    "notes": "Verifica a conexão com SELECT 1. Não contém versão ou dados de cadastro."
+  },
+  {
+    "method": "GET",
+    "path": "/api/dashboard",
+    "body": null,
+    "response": {
+      "materials": 2,
+      "printers": 1,
+      "products": 1,
+      "open_orders": 1
+    },
+    "notes": "Contagens de cadastros e ordens planejadas/em produção. Não inclui totais financeiros."
+  },
+  {
+    "method": "GET",
+    "path": "/api/materials",
+    "body": null,
+    "response": [
+      {
+        "id": 1,
+        "brand": "Marca Exemplo",
+        "family": "PLA",
+        "color": "Azul",
+        "cost_per_kg": 100
+      }
+    ],
+    "notes": "Lista completa, em ID decrescente. Sem paginação ou filtros de query string. Filamentos incluem stock_g; produtos stock_units; impressoras availability derivada."
+  },
+  {
+    "method": "POST",
+    "path": "/api/materials",
+    "body": {
+      "brand": "Marca Exemplo",
+      "family": "PLA",
+      "color": "Azul",
+      "cost_per_kg": 100,
+      "initial_stock_g": 1000
+    },
+    "response": {
+      "id": 1,
+      "brand": "Marca Exemplo",
+      "family": "PLA",
+      "color": "Azul",
+      "cost_per_kg": 100
+    },
+    "notes": "201 na criação. Filamentos aceitam initial_stock_g opcional, padrão zero; saldo positivo cria movimento. Demais cadastros têm apenas os campos mostrados."
+  },
+  {
+    "method": "PUT",
+    "path": "/api/materials/:id",
+    "body": {
+      "brand": "Marca Exemplo",
+      "family": "PLA",
+      "color": "Azul",
+      "cost_per_kg": 100,
+      "stock_g": 800,
+      "expected_stock_g": 1000
+    },
+    "response": {
+      "id": 1,
+      "brand": "Marca Exemplo",
+      "family": "PLA",
+      "color": "Azul",
+      "cost_per_kg": 100
+    },
+    "notes": "200 na edição. PUT de filamento exige os dados cadastrais; ajuste de saldo é opcional, mas exige expected_stock_g quando stock_g está presente. Produto não aceita stock_units neste contrato."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/materials/:id",
+    "body": null,
+    "response": null,
+    "notes": "204, sem corpo. 404 para ID ausente e 409 quando houver vínculos. Não é remoção lógica: o registro elegível é apagado."
+  },
+  {
+    "method": "GET",
+    "path": "/api/printers",
+    "body": null,
+    "response": [
+      {
+        "id": 1,
+        "code": "Impressora 01",
+        "brand": "Bambu Lab",
+        "model": "A1",
+        "status": "disponivel"
+      }
+    ],
+    "notes": "Lista completa, em ID decrescente. Sem paginação ou filtros de query string. Filamentos incluem stock_g; produtos stock_units; impressoras availability derivada."
+  },
+  {
+    "method": "POST",
+    "path": "/api/printers",
+    "body": {
+      "code": "Impressora 01",
+      "brand": "Bambu Lab",
+      "model": "A1",
+      "status": "disponivel"
+    },
+    "response": {
+      "id": 1,
+      "code": "Impressora 01",
+      "brand": "Bambu Lab",
+      "model": "A1",
+      "status": "disponivel"
+    },
+    "notes": "201 na criação. Filamentos aceitam initial_stock_g opcional, padrão zero; saldo positivo cria movimento. Demais cadastros têm apenas os campos mostrados."
+  },
+  {
+    "method": "PUT",
+    "path": "/api/printers/:id",
+    "body": {
+      "code": "Impressora 01",
+      "brand": "Bambu Lab",
+      "model": "A1",
+      "status": "disponivel"
+    },
+    "response": {
+      "id": 1,
+      "code": "Impressora 01",
+      "brand": "Bambu Lab",
+      "model": "A1",
+      "status": "disponivel"
+    },
+    "notes": "200 na edição. PUT de filamento exige os dados cadastrais; ajuste de saldo é opcional, mas exige expected_stock_g quando stock_g está presente. Produto não aceita stock_units neste contrato."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/printers/:id",
+    "body": null,
+    "response": null,
+    "notes": "204, sem corpo. 404 para ID ausente e 409 quando houver vínculos. Não é remoção lógica: o registro elegível é apagado."
+  },
+  {
+    "method": "GET",
+    "path": "/api/products",
+    "body": null,
+    "response": [
+      {
+        "id": 1,
+        "name": "Suporte",
+        "sku": "SUP-001"
+      }
+    ],
+    "notes": "Lista completa, em ID decrescente. Sem paginação ou filtros de query string. Filamentos incluem stock_g; produtos stock_units; impressoras availability derivada."
+  },
+  {
+    "method": "POST",
+    "path": "/api/products",
+    "body": {
+      "name": "Suporte",
+      "sku": "SUP-001"
+    },
+    "response": {
+      "id": 1,
+      "name": "Suporte",
+      "sku": "SUP-001"
+    },
+    "notes": "201 na criação. Filamentos aceitam initial_stock_g opcional, padrão zero; saldo positivo cria movimento. Demais cadastros têm apenas os campos mostrados."
+  },
+  {
+    "method": "PUT",
+    "path": "/api/products/:id",
+    "body": {
+      "name": "Suporte",
+      "sku": "SUP-001"
+    },
+    "response": {
+      "id": 1,
+      "name": "Suporte",
+      "sku": "SUP-001"
+    },
+    "notes": "200 na edição. PUT de filamento exige os dados cadastrais; ajuste de saldo é opcional, mas exige expected_stock_g quando stock_g está presente. Produto não aceita stock_units neste contrato."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/products/:id",
+    "body": null,
+    "response": null,
+    "notes": "204, sem corpo. 404 para ID ausente e 409 quando houver vínculos. Não é remoção lógica: o registro elegível é apagado."
+  },
+  {
+    "method": "POST",
+    "path": "/api/stock-entry",
+    "body": {
+      "material_id": 1,
+      "quantity": 500,
+      "reason": "Reposição de filamento"
+    },
+    "response": {
+      "id": 1,
+      "material_id": 1,
+      "quantity": "500.00",
+      "reason": "Reposição de filamento"
+    },
+    "notes": "201. quantity em gramas, positiva, até 10.000.000 e duas casas; motivo de até 200 caracteres."
+  },
+  {
+    "method": "GET",
+    "path": "/api/movements",
+    "body": null,
+    "response": [
+      {
+        "id": 1,
+        "material_id": 1,
+        "product_id": null,
+        "order_id": null,
+        "sale_id": null,
+        "quantity": "500.00",
+        "reason": "Reposição de filamento",
+        "item": "Marca Exemplo · PLA · Azul",
+        "created_at": "2026-11-22T12:00:00.000Z"
+      }
+    ],
+    "notes": "Lista completa com descrição do alvo. Gramas para filamento e unidades para produto; sinais indicam entrada/saída."
+  },
+  {
+    "method": "GET",
+    "path": "/api/orders",
+    "body": null,
+    "response": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "printer_id": 1,
+        "material_id": 1,
+        "quantity": 10,
+        "status": "planejada",
+        "planned_g": "200.00",
+        "materials": [
+          {
+            "order_id": 1,
+            "slot": 1,
+            "material_id": 1,
+            "brand": "Marca Exemplo",
+            "family": "PLA",
+            "color": "Azul",
+            "planned_g": "200.00",
+            "actual_g": null,
+            "material_cost": null
+          }
+        ]
+      }
+    ],
+    "notes": "Também retorna nomes do produto e da impressora, marca/modelo e totais. material_id no cabeçalho é legado; use materials[] para as cores."
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders",
+    "body": {
+      "product_id": 1,
+      "printer_id": 1,
+      "quantity": 10,
+      "materials": [
+        {
+          "material_id": 1,
+          "planned_g": 100
+        },
+        {
+          "material_id": 2,
+          "planned_g": 100
+        }
+      ]
+    },
+    "response": {
+      "id": 1,
+      "status": "planejada",
+      "quantity": 10,
+      "planned_g": "200.00"
+    },
+    "notes": "201. De 1 a 4 IDs distintos; quantidade de peças inteira positiva até 1.000.000. Cada planned_g é positivo até 10.000.000 com duas casas. A resposta de criação é o cabeçalho; GET retorna os itens."
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/:id/start",
+    "body": null,
+    "response": {
+      "id": 1,
+      "status": "em_producao"
+    },
+    "notes": "200. Estado planejada e impressora livre; 409 em transição inválida. O corpo pode estar ausente."
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/:id/finish",
+    "body": {
+      "approved_quantity": 8,
+      "materials": [
+        {
+          "material_id": 1,
+          "actual_g": 110
+        },
+        {
+          "material_id": 2,
+          "actual_g": 90
+        }
+      ]
+    },
+    "response": {
+      "id": 1,
+      "status": "concluida",
+      "actual_g": "200.00",
+      "approved_quantity": 8,
+      "material_cost": "20.00"
+    },
+    "notes": "200. Mesmo conjunto de filamentos da ordem; cada consumo não negativo; ao menos um positivo. Aprovadas entre zero e quantity. Cada linha recebe snapshot de custo."
+  },
+  {
+    "method": "POST",
+    "path": "/api/orders/:id/cancel",
+    "body": null,
+    "response": {
+      "id": 1,
+      "status": "cancelada"
+    },
+    "notes": "200. Permitido somente em planejada. finished_at recebe o instante de cancelamento."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/orders/:id",
+    "body": null,
+    "response": null,
+    "notes": "204. Exige cancelada sem movimento; remove os itens e o cabeçalho em uma transação."
+  },
+  {
+    "method": "GET",
+    "path": "/api/sales",
+    "body": null,
+    "response": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "product_name": "Suporte",
+        "sku": "SUP-001",
+        "quantity": 2,
+        "channel": "marketplace",
+        "unit_price": "25.00",
+        "total_amount": "50.00"
+      }
+    ],
+    "notes": "Lista completa, ID decrescente; inclui request_id e created_at nos registros reais."
+  },
+  {
+    "method": "POST",
+    "path": "/api/sales",
+    "body": {
+      "request_id": "11111111-1111-4111-8111-111111111111",
+      "product_id": 1,
+      "quantity": 2,
+      "channel": "marketplace",
+      "unit_price": 25
+    },
+    "response": {
+      "id": 1,
+      "quantity": 2,
+      "unit_price": "25.00",
+      "total_amount": "50.00",
+      "channel": "marketplace"
+    },
+    "notes": "201 em venda nova; 200 em reenvio idêntico. Canais: marketplace ou varejo. Preço >0, até 10.000.000 e duas casas. Quantidade inteira entre 1 e 1.000.000."
+  },
+  {
+    "method": "GET",
+    "path": "/api/reports/export",
+    "body": null,
+    "response": "application/zip",
+    "notes": "200 com Content-Disposition attachment e Cache-Control no-store. Contém oito CSVs e LEIA-ME. Não usa os filtros da interface; datas dos CSVs em UTC."
+  }
+]

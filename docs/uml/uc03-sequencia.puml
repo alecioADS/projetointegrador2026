@@ -1,0 +1,39 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title UC03 - Alterar filamento e ajustar saldo
+actor Operador
+boundary "Interface React" as UI
+control "API Express" as API
+database "PostgreSQL" as DB
+Operador -> UI: O operador salva a edição.
+UI -> API: PUT /materials/id com saldo esperado
+API -> API: Validar dados
+API -> DB: BEGIN; SELECT materials FOR UPDATE
+DB --> API: Cadastro e saldo atual
+alt saldo esperado confere
+ API -> DB: UPDATE materials
+ opt diferença de saldo != 0
+  API -> DB: INSERT stock_movements com diferença
+ end
+ API -> DB: COMMIT
+ API --> UI: 200 e cadastro
+else saldo desatualizado
+ API -> DB: ROLLBACK
+ API --> UI: 409; reabrir cadastro
+end
+UI --> Operador: Resultado ou mensagem de impedimento
+@enduml

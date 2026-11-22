@@ -1,0 +1,97 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam dpi 150
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam ArrowColor #36516A
+skinparam classBorderColor #36516A
+skinparam classBackgroundColor #F5F7F9
+skinparam sequenceParticipantBackgroundColor #F5F7F9
+skinparam sequenceLifeLineBorderColor #738393
+skinparam sequenceArrowColor #36516A
+skinparam noteBackgroundColor #FFF9E9
+skinparam noteBorderColor #C6B36F
+title Modelo conceitual de classes do domínio
+hide circle
+class Filamento {
+ +id: inteiro
+ +marca: texto
+ +material: texto
+ +cor: texto
+ +saldoG: decimal
+ +custoPorKg: decimal
+ +ajustarSaldo(novoSaldo, saldoEsperado) 
+}
+class Impressora {
+ +id: inteiro
+ +codigo: texto
+ +marca: texto
+ +modelo: texto
+ +situacao: disponivel|manutencao
+ +disponibilidade: derivada
+ +alterarSituacao() 
+}
+class Produto {
+ +id: inteiro
+ +nome: texto
+ +sku: texto
+ +saldoUnidades: inteiro 
+}
+class OrdemProducao {
+ +id: inteiro
+ +quantidadePlanejada: inteiro
+ +quantidadeAprovada: inteiro?
+ +estado: texto
+ +consumoEstimadoG: decimal
+ +consumoRealG: decimal?
+ +custoMaterial: decimal?
+ +criadaEm: dataHora
+ +encerradaEm: dataHora?
+ +iniciar()
+ +concluir()
+ +cancelar() 
+}
+class ItemFilamento {
+ +posicao: 1..4
+ +estimadoG: decimal
+ +consumoRealG: decimal?
+ +custoMaterial: decimal? 
+}
+class Movimentacao {
+ +id: inteiro
+ +quantidadeAssinada: decimal
+ +motivo: texto
+ +criadaEm: dataHora 
+}
+class Venda {
+ +id: inteiro
+ +chaveOperacao: UUID
+ +quantidade: inteiro
+ +canal: marketplace|varejo
+ +precoUnitario: decimal
+ +totalBruto: derivado
+ +criadaEm: dataHora
+ +registrar() 
+}
+Impressora "1" -- "0..*" OrdemProducao
+Produto "1" -- "0..*" OrdemProducao
+OrdemProducao "1" *-- "1..4" ItemFilamento
+Filamento "1" -- "0..*" ItemFilamento
+Filamento "0..1" -- "0..*" Movimentacao
+Produto "0..1" -- "0..*" Movimentacao
+OrdemProducao "0..1" -- "0..*" Movimentacao
+Produto "1" -- "0..*" Venda
+Venda "0..1" -- "0..*" Movimentacao
+note bottom of Movimentacao
+ Exatamente um alvo: Filamento XOR Produto.
+ Quantidade positiva = entrada; negativa = saída.
+end note
+note bottom of OrdemProducao
+ Modelo conceitual, não classes JavaScript literais.
+ Regras são implementadas nas rotas da API.
+ Uma máquina admite no máximo uma ordem em execução.
+end note
+@enduml

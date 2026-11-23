@@ -32,18 +32,7 @@
   "casos_de_uso": 20,
   "sequencias": 20,
   "campos_cadastrais_pendentes": [
-    "instituicao",
-    "integrantes",
-    "cidade",
-    "inicio_atividades",
-    "quantidade_pessoas",
-    "filiais",
-    "socios",
-    "missao_declarada",
-    "publico_real",
-    "concorrentes",
-    "procedimentos_anteriores",
-    "produtos"
+    "filiais"
   ],
   "fase1_fonte": "Arial 12",
   "fase1_entrelinha_pt": 18

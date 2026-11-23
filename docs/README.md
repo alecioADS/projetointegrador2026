@@ -15,7 +15,7 @@ A entrega está em [output/entrega/AVS-Labs-3D-Documentacao-Entrega.zip](../outp
 | Manual do usuário | [Manual](tecnica/06-manual-do-usuario.md) | [PDF](../output/pdf/06-Manual-do-Usuario.pdf) |
 | Atlas de diagramas | [Fontes e imagens](uml) | [PDF em páginas A3](../output/pdf/07-Atlas-Diagramas-UML.pdf) |
 
-A fase 1 usa Arial 12 e entrelinha de 18 pontos (1,5). Instituição, integrantes e fatos empresariais não informados permanecem identificados para confirmação. Não submeter esses campos como fatos validados. A parte técnica e os diagramas refletem o aplicativo implementado.
+A fase 1 usa Arial 12 e entrelinha de 18 pontos (1,5). Identificação acadêmica e dados empresariais foram incorporados em 23/11/2026. Filiais e perfil demográfico dos clientes não foram confirmados e estão indicados como limitações; a missão é uma proposta. A parte técnica e os diagramas refletem o aplicativo implementado.
 
 ## Documentação técnica
 

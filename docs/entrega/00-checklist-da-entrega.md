@@ -12,15 +12,17 @@
 
 Os prazos escritos nos enunciados são 01/09/2026, 20/10/2026, 03/11/2026 e 01/12/2026. Não foram alterados nesta documentação. A regra de PostgreSQL foi fornecida pelo aluno depois da leitura do PDF que mencionava Workbench.
 
-## Campos reais pendentes antes de submeter a fase 1
+## Dados empresariais e identificação
 
-Preencher em docs/entrega/dados-do-trabalho.json e no texto da fase 1: instituição, integrantes, cidade/UF, início de atividades, responsáveis/sócios, quantidade de pessoas, filiais, missão declarada (se houver), produtos/público reais, concorrentes e processo anterior.
+Identificação do aluno, RA, instituição, cidade, início das atividades, proprietário, equipe, produtos, clientes, canais, concorrentes, processos anteriores e objetivos foram incorporados a partir dos documentos anteriores e das informações fornecidas pelo proprietário em 23/11/2026. A documentação anterior do FarmaSync foi utilizada apenas para identificação do trabalho; seus fatos empresariais fictícios não foram transferidos.
 
-As menções a esses dados no texto estão identificadas como campos a preencher ou proposta para validação. Não submeter a fase 1 como caracterização empresarial validada enquanto esses campos permanecerem pendentes. O software, os diagramas e os demais documentos técnicos podem ser revisados independentemente dessa confirmação.
+**Informações ainda não confirmadas:** existência de filiais e perfil demográfico (idade, renda, sexo e escolaridade) dos clientes. A fase 1 declara essas limitações, sem campos genéricos a preencher nem dados inventados. A missão está explicitamente identificada como proposta. O porte jurídico/fiscal não foi informado.
+
+O cálculo completo de custos e lucratividade é um objetivo de evolução: a versão atual registra custo de filamento e faturamento bruto, sem financeiro completo. Revisar essas limitações com a professora caso exija caracterização empresarial adicional.
 
 ## Conferências do grupo
 
-1. Completar identificação do grupo e fatos da empresa.
+1. Conferir os dados incorporados e, quando disponíveis, confirmar filiais e perfil demográfico dos clientes.
 2. Conferir se a professora deseja capa separada ou modelo institucional; a fase 1 produzida tem quatro páginas de conteúdo, sem capa adicional.
 3. Confirmar a substituição de MySQL Workbench por PostgreSQL na fase 3.
 4. Abrir os PDFs e conferir a leitura das figuras; o atlas usa páginas maiores para os diagramas detalhados.

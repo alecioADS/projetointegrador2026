@@ -117,7 +117,7 @@ O workflow `.github/workflows/ci.yml` executa build, integração com PostgreSQL
 
 ## Documentação de entrega e manutenção
 
-O índice completo está em [docs/README.md](docs/README.md). Os PDFs estão em [output/pdf](output/pdf) e o pacote consolidado em [output/entrega](output/entrega). A fase 1 tem quatro páginas em Arial 12 e espaçamento 1,5; ainda exige confirmação dos campos empresariais/institucionais marcados. A fase 2 contém vinte casos de uso e vinte sequências, classes, objetos e dois diagramas de estados. A fase 3 acompanha SQL e dicionário; a fase 4 traz o roteiro da apresentação.
+O índice completo está em [docs/README.md](docs/README.md). Os PDFs estão em [output/pdf](output/pdf) e o pacote consolidado em [output/entrega](output/entrega). A fase 1 tem quatro páginas em Arial 12 e espaçamento 1,5; incorpora os dados fornecidos pelo proprietário e identifica como não confirmadas a existência de filiais e a demografia dos clientes. A fase 2 contém vinte casos de uso e vinte sequências, classes, objetos e dois diagramas de estados. A fase 3 acompanha SQL e dicionário; a fase 4 traz o roteiro da apresentação.
 
 A documentação técnica inclui stack com versões do lockfile, arquitetura, requisitos/regras, dicionário das sete tabelas, referência dos 25 endpoints, manual do usuário, instalação, operação, backup/restauração, limites e rastreabilidade dos testes. Diagramas possuem fontes PlantUML e versões PNG/SVG. Não há funcionalidade futura descrita como implementada.
 

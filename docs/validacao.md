@@ -18,7 +18,7 @@ Quatro fases em Markdown/PDF; fase 1 com quatro páginas em Arial 12 e entrelinh
 
 As figuras são renderizadas localmente a partir de PlantUML. Os PDFs são renderizados para inspeção visual. O manifesto em output/manifesto-documentacao.json registra páginas, contagens e campos institucionais/empresariais ainda pendentes.
 
-A caracterização da empresa só pode ser submetida como factual depois de preencher e validar os dados indicados em entrega/dados-do-trabalho.json e no texto da fase 1. Não foram inventados integrantes, porte, histórico ou perfil demográfico de clientes.
+A caracterização incorpora dados informados pelo proprietário em 23/11/2026 e a identificação acadêmica dos documentos anteriores. A existência de filiais e o perfil demográfico dos clientes não foram confirmados; a missão é uma proposta. Não foram inventados porte jurídico/fiscal ou dados demográficos.
 
 ## Segurança do pacote
 

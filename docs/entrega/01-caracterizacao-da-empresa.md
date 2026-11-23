@@ -1,59 +1,57 @@
 # AVS Labs 3D - Caracterização da empresa e proposta do sistema
 
-**Instituição:** [PREENCHER INSTITUIÇÃO]. **Curso:** Tecnologia em Análise e Desenvolvimento de Sistemas. **Disciplina:** PI - Projeto e Implementação, 2026/02. **Professora:** Ms. Cristiane Divina Lemes Hamawaki. **Integrantes:** [PREENCHER GRUPO].
+**Instituição:** IMEPAC. **Curso:** Tecnologia em Análise e Desenvolvimento de Sistemas. **Disciplina:** PI - Projeto e Implementação, 2026/02. **Professora:** Ms. Cristiane Divina Lemes Hamawaki. **Integrante:** Alécio Vieira da Silva, RA 2426510402. Projeto individual.
 
 ## Identificação da organização
 
-A organização escolhida é identificada pela marca AVS Labs 3D, associada à produção de peças por impressão 3D. O sistema desenvolvido utiliza o mesmo nome e a identidade visual oficial disponibilizada pelo responsável pelo projeto. Seu propósito é organizar o uso de filamentos, a utilização de impressoras, os produtos fabricados e a saída de produtos por venda.
+A AVS Labs 3D é a área da AVS Labs dedicada à impressão 3D, sediada em Araguari, Minas Gerais. Começou em 2026, com planejamento comercial registrado desde setembro, para desenvolver produtos próprios e fabricar peças personalizadas sob encomenda. Sua estrutura inicial contou com duas impressoras Bambu Lab A1 Combo.
 
-**Localização:** [PREENCHER CIDADE E UF]. **Início das atividades:** [PREENCHER ANO OU DATA APROXIMADA]. **Sócios ou responsáveis:** [PREENCHER RESPONSÁVEIS]. **Quantidade de pessoas:** [PREENCHER QUANTIDADE DE PESSOAS]. **Filiais:** [PREENCHER FILIAIS]. Esses dados deverão ser confirmados pela organização antes da entrega, pois a implantação do software não determina a existência de filiais, o enquadramento jurídico ou o porte empresarial.
+Alécio Vieira da Silva é o proprietário. A operação conta com duas pessoas, Alécio e Mariana, e tem sua base em Araguari. A existência de filiais ainda não foi confirmada pelo responsável. A equipe reduzida caracteriza a dimensão operacional relatada, sem determinar enquadramento jurídico, porte fiscal ou faturamento da organização.
 
-O ramo contemplado é a fabricação de produtos por impressão 3D com filamentos. O escopo operacional inclui identificar matérias-primas por marca, material e cor, planejar ordens de até quatro filamentos, acompanhar a disponibilidade das máquinas e registrar peças aprovadas. O sistema foi delimitado para uma operação local, com um único ambiente de dados e sem autenticação por pessoa.
+A empresa fabrica chaveiros personalizados, lembrancinhas, vasos, enfeites, peças decorativas, suportes, organizadores e cases. Também desenvolve peças sob medida e itens personalizados com QR Code e NFC. Seu ramo é a fabricação de produtos por impressão 3D, com atendimento de demandas de personalização e utilidade cotidiana.
 
-**Missão proposta para validação:** transformar demandas de fabricação em peças impressas com organização operacional, rastreabilidade de materiais e controle das entregas comerciais. Essa formulação é uma proposta de alinhamento ao sistema e deverá ser substituída pela missão declarada da empresa, caso exista.
+**Missão proposta:** desenvolver e fabricar produtos personalizados e utilitários por impressão 3D, com atenção às necessidades de cada cliente e organização da produção. Essa formulação foi elaborada para o trabalho a partir dos objetivos informados; não é apresentada como missão institucional já declarada pela empresa.
 
 <!-- PAGEBREAK -->
 
 # Mercado, público e ambiente de atuação
 
-Os canais comerciais previstos no aplicativo são Marketplace e Varejo. Eles representam a origem de cada venda registrada pelo operador; o software não se conecta às plataformas nem realiza a venda online. O registro permite acompanhar quantidade vendida, preço unitário e faturamento bruto por canal.
+A AVS Labs 3D atende principalmente consumidores finais e clientes que encomendam produtos para eventos, como casamentos e feiras escolares. Seus produtos combinam personalização, decoração e utilidade. Não foram levantadas faixas de renda, idade, sexo ou escolaridade dos consumidores; não se atribui à clientela um perfil demográfico sem pesquisa.
 
-O público consumidor efetivo deverá ser descrito com base nos produtos e clientes reais da AVS Labs 3D: [PREENCHER PRINCIPAIS PRODUTOS E NECESSIDADES ATENDIDAS]. Informações de poder aquisitivo, faixa etária, sexo e escolaridade do público deverão ser levantadas com a organização. Não se presume um perfil demográfico apenas pelo uso de impressão 3D. Para produtos destinados a empresas, é pertinente registrar o segmento e o tipo de necessidade produtiva atendida, além do perfil do responsável pela compra.
+Os canais atuais são venda direta, atendimento pelo WhatsApp e pelo Instagram @avslabs3d, Shopee e TikTok Shop. No aplicativo, as vendas são classificadas em Marketplace ou Varejo. Essa classificação permite acompanhar quantidade, preço unitário e faturamento bruto por canal; não existe conexão automática com plataformas, mensagens, pagamentos ou anúncios.
 
-A concorrência também precisa ser caracterizada no contexto real da organização: [PREENCHER CONCORRENTES LOCAIS OU DIGITAIS E DIFERENCIAIS]. Como referência para o levantamento, podem ser observados outros fabricantes de peças impressas, prestadores de serviços de impressão 3D e vendedores de produtos equivalentes nos canais utilizados. Esses grupos são critérios de pesquisa, não uma lista de concorrentes confirmados.
+A concorrência inclui ateliês de impressão 3D, vendedores de personalizados nos marketplaces e lojas de presentes e lembrancinhas. Na pesquisa de mercado relatada pelo proprietário foram mapeadas Ateliê Mestre Criativo, Flayart3D e PrintaColor3D, em segmentos como decoração e acessórios. Esses nomes são referências fornecidas pela organização, sem afirmação de localização, participação de mercado ou comparação de desempenho.
 
-No ambiente interno modelado, o operador utiliza navegador, servidor Node.js e PostgreSQL no mesmo computador. O programa funciona localmente, com dados persistentes. Após instalar dependências e a imagem do banco, a operação cotidiana não depende de internet. A abertura foi facilitada por um iniciador macOS que prepara o ambiente e abre a interface no navegador.
+A empresa pretende consolidar a marca, ampliar as vendas pela internet e estabelecer parcerias com lojas locais. O atendimento sob encomenda e o desenvolvimento de peças próprias compõem sua proposta comercial. A expansão exige organizar materiais, capacidade das máquinas, produção e produtos disponíveis para venda.
 
-A proposta não exige criar departamentos formais na empresa. As funções de cadastro, produção, controle de estoque e registro de vendas podem ser realizadas pela mesma pessoa. A interface entre essas funções é feita pelos registros compartilhados: filamentos alimentam a produção; ordens concluídas alimentam o estoque de produtos; vendas reduzem o estoque e compõem o faturamento bruto.
+O sistema funciona localmente com navegador, servidor Node.js e PostgreSQL. Após instalar dependências e a imagem do banco, a operação cotidiana não depende de internet. Cadastro, fabricação, estoque e vendas compartilham os mesmos registros, sem exigir departamentos formais. O programa não possui autenticação individual nem separação de dados por filial.
 
 <!-- PAGEBREAK -->
 
-# Processos considerados e funcionamento proposto
+# Processos anteriores e funcionamento proposto
 
-O procedimento anterior deve ser confirmado pelo responsável: [PREENCHER COMO ERAM FEITOS CADASTROS, CONTAGENS, PLANEJAMENTO E REGISTRO DE VENDAS]. Não se afirma que a empresa utilizava caderno, planilha ou outro programa sem esse levantamento. A descrição abaixo apresenta os procedimentos que o novo aplicativo passa a oferecer, inclusive quando a função informatizada for nova.
+Antes do aplicativo, os controles eram feitos com planilhas e lançamentos manuais. Elas reuniam vendas, caixa, estoque, produção e custos. Recebimentos e pagamentos também exigiam registro manual. As dificuldades relatadas incluíam atualizar os registros, acompanhar o consumo de filamento e calcular o custo e a margem dos pedidos considerando material, tempo de máquina, energia, embalagem e taxas.
 
-No cadastro de filamentos, marca, material e cor são campos independentes. O operador informa custo por quilograma e saldo inicial em gramas. Uma reposição é registrada como entrada com motivo. Quando uma contagem exige corrigir o saldo total, a edição gera uma movimentação da diferença, preservando os registros anteriores.
+No novo cadastro de filamentos, marca, material e cor são campos independentes. O operador informa custo por quilograma e saldo inicial em gramas. Reposições geram entradas com motivo. Uma correção do saldo total registra a diferença no histórico, preservando os movimentos anteriores e permitindo conferir a contagem física.
 
-As impressoras são identificadas por código da unidade, marca e modelo. A situação cadastral diferencia máquina disponível de máquina em manutenção. A disponibilidade operacional mostra Livre ou Ocupada conforme a existência de uma produção em execução. Isso permite distinguir duas máquinas do mesmo modelo.
+As impressoras são identificadas por código da unidade, marca e modelo, distinguindo máquinas iguais. A situação cadastral indica disponibilidade ou manutenção. A indicação Livre ou Ocupada é calculada conforme a existência de uma ordem em execução. O produto é identificado por nome e SKU e recebe saldo quando uma fabricação é concluída.
 
-O produto é cadastrado com nome e SKU. Uma ordem associa produto, quantidade planejada, impressora e de um a quatro filamentos distintos. A seleção da matéria-prima é feita separadamente por marca, material e cor. O operador informa a estimativa de consumo por filamento. O planejamento não reserva materiais; a baixa ocorre ao concluir a fabricação.
+Uma ordem associa produto, quantidade planejada, impressora e até quatro filamentos distintos, selecionados por marca, material e cor. O operador informa consumo estimado por item. O planejamento não reserva materiais. Ao iniciar a ordem, a impressora fica ocupada; na conclusão são informados o consumo real de cada filamento e a quantidade de peças aprovadas.
 
-Ao iniciar a ordem, a impressora fica ocupada. Na conclusão, o operador informa consumo real de cada filamento e número de peças aprovadas. O sistema valida os saldos e confirma consumos, custos, movimentações e entrada do produto em conjunto. Se uma cor estiver sem saldo suficiente, a conclusão inteira é revertida. A ordem encerrada libera a impressora automaticamente.
-
-O cancelamento é permitido antes do início. Produção iniciada deve ter seu consumo registrado mesmo em falha total, com zero peças aprovadas. Ordens canceladas sem movimentação podem ser apagadas após confirmação; ordens concluídas permanecem no histórico.
+A conclusão valida os saldos e confirma consumos, custos de material, movimentações e entrada do produto em conjunto. Se uma cor tiver saldo insuficiente, toda a operação é revertida. A máquina é liberada ao encerrar a produção. Planejamentos podem ser cancelados; produções iniciadas devem registrar consumo mesmo em falha total, com zero peças aprovadas.
 
 <!-- PAGEBREAK -->
 
 # Problemas tratados, motivação e resultados esperados
 
-A motivação da proposta é concentrar informações que precisam manter coerência durante a fabricação e a venda. Até a confirmação dos procedimentos anteriores, os itens abaixo são necessidades tratadas pelo sistema, e não alegações de falhas ocorridas na empresa.
+A motivação é reunir informações operacionais antes mantidas em planilhas e reduzir a necessidade de lançamentos desconectados. A solução atende parte das dificuldades relatadas e estabelece uma base organizada para aumentar o volume de pedidos. Não substitui todas as planilhas financeiras nem calcula a margem completa de cada encomenda.
 
-Uma identificação baseada somente em marca não distingue filamentos de materiais e cores diferentes nem impressoras de um mesmo fabricante. A solução separa os três aspectos do filamento e utiliza código único por máquina. A seleção por modelo e unidade reduz a ambiguidade no planejamento.
+O acompanhamento manual de filamentos é apoiado por saldos em gramas, entradas, ajustes e consumos associados às ordens. A identificação separada por marca, material e cor evita confundir matérias-primas. Até quatro cores podem participar da fabricação, cada uma com consumo real e custo de material próprios. O histórico facilita a conferência das alterações de estoque.
 
-O consumo de várias cores exige registrar a participação de cada filamento. A solução admite até quatro itens por ordem e grava consumo e custo por item. A baixa transacional evita concluir apenas parte das cores quando existe insuficiência em uma delas. A proteção de estado impede repetir a conclusão e duplicar a entrada de produtos.
+A utilização de máquinas iguais é organizada pelo código de cada unidade. A disponibilidade deriva da produção ativa e impede iniciar outra ordem na mesma impressora. As validações transacionais e as restrições do banco protegem contra saldo negativo, repetição da conclusão e duplicação da entrada de peças no estoque.
 
-A disputa por uma máquina é tratada ao iniciar a produção e reforçada por restrição do banco. A disponibilidade é derivada da ordem ativa, evitando a necessidade de lembrar de liberar a impressora manualmente. A edição de saldo também verifica se houve alteração desde a abertura do formulário, protegendo uma reposição ou consumo ocorrido no intervalo.
+A venda registra produto, quantidade, canal e preço unitário; reduz o estoque e calcula o faturamento bruto. Esse valor não representa lucro ou confirmação de recebimento. O custo registrado na produção abrange filamento, sem incluir energia, tempo de máquina, embalagem, taxas, despesas ou pagamentos. A apuração completa de custos e lucratividade permanece como objetivo de evolução da empresa.
 
-Na saída de produtos, a venda registra quantidade, canal e preço unitário, baixa o estoque e calcula o bruto. Esse valor não representa lucro, pois não desconta taxas ou despesas. A exportação geral reúne todas as seções em CSVs separados dentro de um ZIP, permitindo conferência externa sem criar um módulo financeiro completo.
+A exportação geral disponibiliza CSVs separados em um ZIP para conferência e análise externa. Esperam-se maior clareza dos saldos, rastreabilidade do consumo, organização das máquinas e visibilidade das vendas. O funcionamento é demonstrado por roteiro e testes automatizados; não se afirma redução de custos ou aumento de lucro sem medição posterior.
 
-Os resultados esperados são maior clareza do estoque disponível, rastreabilidade dos consumos, distinção das unidades de impressora e visibilidade do faturamento bruto. A comprovação operacional é feita por roteiro de demonstração e testes automatizados. Antes da entrega, o grupo deverá completar os campos de identificação e validar missão, público, concorrentes e procedimentos anteriores com dados reais da organização.
+Os dados empresariais desta caracterização foram fornecidos pelo proprietário em 23/11/2026. Permanecem sem levantamento o perfil demográfico dos clientes e a confirmação de filiais. O sistema utiliza a marca oficial AVS Labs 3D e foi delimitado para atender à operação local descrita, mantendo possibilidades de evolução separadas das funções implementadas.

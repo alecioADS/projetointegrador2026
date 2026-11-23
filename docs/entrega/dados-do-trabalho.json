@@ -1,14 +1,29 @@
 {
-  "instituicao": null,
-  "integrantes": null,
-  "cidade": null,
-  "inicio_atividades": null,
-  "quantidade_pessoas": null,
+  "instituicao": "IMEPAC",
+  "curso": "Tecnologia em Análise e Desenvolvimento de Sistemas",
+  "disciplina": "PI - Projeto e Implementação, 2026/02",
+  "professora": "Prof.ª Ms. Cristiane Divina Lemes Hamawaki",
+  "integrantes": "Alécio Vieira da Silva - RA 2426510402 (projeto individual)",
+  "cidade": "Araguari, Minas Gerais",
+  "inicio_atividades": "2026, com planejamento comercial registrado desde setembro",
+  "quantidade_pessoas": "Duas pessoas: Alécio e Mariana",
   "filiais": null,
-  "socios": null,
-  "missao_declarada": null,
-  "publico_real": null,
-  "concorrentes": null,
-  "procedimentos_anteriores": null,
-  "produtos": null
+  "socios": "Proprietário: Alécio Vieira da Silva",
+  "missao_declarada": "Não informada; a fase 1 apresenta uma proposta identificada como tal",
+  "publico_real": "Consumidores finais e clientes de encomendas para eventos, como casamentos e feiras escolares. Perfil demográfico não levantado.",
+  "concorrentes": [
+    "Ateliê Mestre Criativo",
+    "Flayart3D",
+    "PrintaColor3D"
+  ],
+  "procedimentos_anteriores": "Planilhas e lançamentos manuais de vendas, caixa, estoque, produção, custos, recebimentos e pagamentos.",
+  "produtos": "Chaveiros personalizados, lembrancinhas, vasos, enfeites, peças decorativas, suportes, organizadores, cases, peças sob medida e itens personalizados com QR Code e NFC.",
+  "canais_venda": [
+    "Venda direta",
+    "WhatsApp",
+    "Instagram @avslabs3d",
+    "Shopee",
+    "TikTok Shop"
+  ],
+  "fonte": "Dados empresariais fornecidos pelo proprietário em 23/11/2026; identificação da disciplina e professora extraída das atividades anteriores do FarmaSync."
 }
